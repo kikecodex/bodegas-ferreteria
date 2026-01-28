@@ -2,9 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+// GET /api/seed - Crear usuario admin (para fácil acceso desde navegador)
+export async function GET() {
+    return createAdminUser();
+}
+
 // POST /api/seed - Crear usuario admin por defecto
 // IMPORTANTE: Eliminar o proteger en producción
 export async function POST() {
+    return createAdminUser();
+}
+
+async function createAdminUser() {
     try {
         // Verificar si ya existe admin
         const existingAdmin = await prisma.user.findUnique({
