@@ -1,0 +1,619 @@
+// Prisma Schema - Sistema de Gestión Retail SaaS
+// Multi-Tenant Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// MULTI-TENANCY
+// ==========================================
+
+model Tenant {
+  id            String    @id @default(cuid())
+  name          String                    // "Ferretería Don Pedro"
+  slug          String    @unique         // "ferreteria-don-pedro" (subdomain/identificador)
+  
+  // Datos fiscales
+  ruc           String?
+  tradeName     String?                   // Nombre comercial
+  address       String?
+  phone         String?
+  email         String?
+  logo          String?
+  
+  // Plan y Suscripción
+  plan          String    @default("TRIAL")  // TRIAL, ACTIVO, SUSPENDIDO
+  planPrice     Float     @default(30)       // S/30 mensual
+  planExpiresAt DateTime?
+  trialEndsAt   DateTime?
+  
+  // Estado
+  isActive      Boolean   @default(true)
+  
+  // Relaciones
+  users         User[]
+  categories    Category[]
+  products      Product[]
+  clients       Client[]
+  sales         Sale[]
+  suppliers     Supplier[]
+  purchases     Purchase[]
+  cashRegisters CashRegister[]
+  settings      Setting[]
+  stockMovements StockMovement[]
+  reorderAlerts  ReorderAlert[]
+  payments      Payment[]
+  quotations    Quotation[]
+  salesNotes    SalesNote[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  amount    Float                        // Monto pagado
+  method    String   @default("YAPE")    // YAPE, TRANSFERENCIA, EFECTIVO
+  reference String?                      // # de operación Yape
+  notes     String?
+  
+  // Período que cubre
+  periodStart DateTime?
+  periodEnd   DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([tenantId])
+}
+
+// ==========================================
+// USUARIOS Y AUTENTICACIÓN
+// ==========================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  role          String    @default("VENDEDOR")  // ADMIN, GERENTE, VENDEDOR, ALMACENERO, SUPERADMIN
+  isActive      Boolean   @default(true)
+  avatar        String?
+  phone         String?
+  
+  // Multi-tenancy
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Relaciones
+  sales         Sale[]
+  sessions      Session[]
+  purchases     Purchase[]
+  quotations    Quotation[]
+  salesNotes    SalesNote[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([tenantId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  
+  createdAt    DateTime @default(now())
+}
+
+// ==========================================
+// PRODUCTOS E INVENTARIO
+// ==========================================
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  icon        String?
+  isActive    Boolean   @default(true)
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId    String?
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Relaciones
+  products    Product[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([tenantId, name])  // Nombre único por tenant
+  @@index([tenantId])
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  code        String
+  name        String
+  description String?
+  
+  // Precios
+  price       Float
+  cost        Float
+  
+  // Stock
+  stock       Int       @default(0)
+  minStock    Int       @default(5)
+  maxStock    Int?
+  
+  // Logística
+  reorderPoint    Int?
+  preferredVendor String?
+  lastOrderDate   DateTime?
+  avgDailySales   Float?
+  
+  // Unidades
+  unit        String    @default("UND")
+  
+  // Estado
+  isActive    Boolean   @default(true)
+  isFeatured  Boolean   @default(false)
+  
+  // Imágenes
+  image       String?
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId    String?
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Relaciones
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
+  saleItems   SaleItem[]
+  stockMovements StockMovement[]
+  unitsOfMeasure UnitOfMeasure[]
+  reorderAlerts  ReorderAlert[]
+  purchaseItems  PurchaseItem[]
+  quotationItems QuotationItem[]
+  salesNoteItems SalesNoteItem[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([tenantId, code])  // Código único por tenant
+  @@index([tenantId])
+}
+
+model StockMovement {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  
+  type        String
+  quantity    Int
+  previousStock Int
+  newStock    Int
+  
+  reason      String?
+  reference   String?
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId    String?
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([tenantId])
+}
+
+// ==========================================
+// UNIDADES DE MEDIDA
+// ==========================================
+
+model UnitOfMeasure {
+  id               String   @id @default(cuid())
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  name             String
+  abbreviation     String
+  conversionFactor Float
+  
+  price            Float
+  barcode          String?
+  
+  isDefault        Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@unique([productId, abbreviation])
+}
+
+// ==========================================
+// ALERTAS DE REORDEN
+// ==========================================
+
+model ReorderAlert {
+  id             String    @id @default(cuid())
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  type           String
+  currentStock   Int
+  minStock       Int
+  reorderPoint   Int?
+  
+  status         String    @default("PENDING")
+  
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  orderedAt      DateTime?
+  resolvedAt     DateTime?
+  
+  notes          String?
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId       String?
+  tenant         Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  @@index([tenantId])
+}
+
+// ==========================================
+// CLIENTES
+// ==========================================
+
+model Client {
+  id           String    @id @default(cuid())
+  
+  documentType String    @default("DNI")
+  document     String
+  
+  name         String
+  phone        String?
+  email        String?
+  address      String?
+  
+  creditLimit  Float?
+  currentDebt  Float     @default(0)
+  
+  segment      String    @default("REGULAR")
+  
+  isActive     Boolean   @default(true)
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId     String?
+  tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Relaciones
+  sales        Sale[]
+  quotations   Quotation[]
+  salesNotes   SalesNote[]
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@unique([tenantId, document])  // Documento único por tenant
+  @@index([tenantId])
+}
+
+// ==========================================
+// VENTAS Y TRANSACCIONES
+// ==========================================
+
+model Sale {
+  id           String     @id @default(cuid())
+  number       String
+  
+  clientId     String?
+  client       Client?    @relation(fields: [clientId], references: [id])
+  
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  
+  subtotal     Float
+  discount     Float      @default(0)
+  tax          Float
+  total        Float
+  
+  paymentMethod String    @default("EFECTIVO")
+  amountPaid   Float
+  change       Float      @default(0)
+  
+  status       String     @default("COMPLETADA")
+  
+  documentType String     @default("BOLETA")
+  documentNumber String?
+  
+  notes        String?
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId     String?
+  tenant       Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  items        SaleItem[]
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  @@unique([tenantId, number])  // Número único por tenant
+  @@index([tenantId])
+}
+
+model SaleItem {
+  id          String   @id @default(cuid())
+  
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  productName String
+  productCode String
+  
+  quantity    Int
+  unitPrice   Float
+  discount    Float    @default(0)
+  subtotal    Float
+}
+
+// ==========================================
+// CAJA
+// ==========================================
+
+model CashRegister {
+  id            String    @id @default(cuid())
+  
+  openingAmount Float
+  closingAmount Float?
+  
+  expectedAmount Float?
+  difference    Float?
+  
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  
+  openedBy      String
+  closedBy      String?
+  
+  notes         String?
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId])
+}
+
+// ==========================================
+// PROVEEDORES Y COMPRAS
+// ==========================================
+
+model Supplier {
+  id          String    @id @default(cuid())
+  
+  ruc         String
+  name        String
+  tradeName   String?
+  
+  phone       String?
+  email       String?
+  address     String?
+  
+  bankName    String?
+  bankAccount String?
+  
+  isActive    Boolean   @default(true)
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId    String?
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  purchases   Purchase[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([tenantId, ruc])  // RUC único por tenant
+  @@index([tenantId])
+}
+
+model Purchase {
+  id          String    @id @default(cuid())
+  number      String
+  
+  supplierId  String
+  supplier    Supplier  @relation(fields: [supplierId], references: [id])
+  
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  
+  invoiceNumber String?
+  invoiceDate   DateTime?
+  
+  subtotal    Float
+  tax         Float
+  total       Float
+  
+  status      String    @default("COMPLETADA")
+  
+  notes       String?
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId    String?
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  items       PurchaseItem[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([tenantId, number])  // Número único por tenant
+  @@index([tenantId])
+}
+
+model PurchaseItem {
+  id          String   @id @default(cuid())
+  
+  purchaseId  String
+  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  productName String
+  productCode String
+  
+  quantity    Int
+  unitCost    Float
+  subtotal    Float
+}
+
+// ==========================================
+// CONFIGURACIÓN
+// ==========================================
+
+model Setting {
+  id    String   @id @default(cuid())
+  key   String
+  value String
+  type  String   @default("string")
+  
+  // Multi-tenancy (opcional para compatibilidad)
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  updatedAt DateTime @updatedAt
+  
+  @@unique([tenantId, key])  // Key única por tenant
+  @@index([tenantId])
+}
+
+// ==========================================
+// COTIZACIONES
+// ==========================================
+
+model Quotation {
+  id           String          @id @default(cuid())
+  number       String                        // COT-2026-0001
+  
+  clientId     String?
+  client       Client?         @relation(fields: [clientId], references: [id])
+  
+  userId       String
+  user         User            @relation(fields: [userId], references: [id])
+  
+  subtotal     Float
+  discount     Float           @default(0)
+  tax          Float
+  total        Float
+  
+  status       String          @default("PENDIENTE")  // PENDIENTE, ACEPTADA, RECHAZADA, VENCIDA, CONVERTIDA
+  validUntil   DateTime                      // Fecha de vencimiento
+  
+  notes        String?
+  
+  // Multi-tenancy
+  tenantId     String?
+  tenant       Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  items        QuotationItem[]
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  @@unique([tenantId, number])
+  @@index([tenantId])
+}
+
+model QuotationItem {
+  id          String    @id @default(cuid())
+  
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  
+  productName String
+  productCode String
+  
+  quantity    Int
+  unitPrice   Float
+  discount    Float     @default(0)
+  subtotal    Float
+}
+
+// ==========================================
+// NOTAS DE VENTA
+// ==========================================
+
+model SalesNote {
+  id           String          @id @default(cuid())
+  number       String                        // NV-2026-0001
+  
+  clientId     String?
+  client       Client?         @relation(fields: [clientId], references: [id])
+  
+  userId       String
+  user         User            @relation(fields: [userId], references: [id])
+  
+  subtotal     Float
+  discount     Float           @default(0)
+  tax          Float
+  total        Float
+  
+  paymentMethod String         @default("EFECTIVO")  // EFECTIVO, YAPE, PLIN, TARJETA, TRANSFERENCIA
+  amountPaid   Float
+  change       Float           @default(0)
+  
+  status       String          @default("COMPLETADA")  // COMPLETADA, ANULADA
+  notes        String?
+  
+  // Multi-tenancy
+  tenantId     String?
+  tenant       Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  items        SalesNoteItem[]
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  @@unique([tenantId, number])
+  @@index([tenantId])
+}
+
+model SalesNoteItem {
+  id          String    @id @default(cuid())
+  
+  salesNoteId String
+  salesNote   SalesNote @relation(fields: [salesNoteId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  
+  productName String
+  productCode String
+  
+  quantity    Int
+  unitPrice   Float
+  discount    Float     @default(0)
+  subtotal    Float
+}
+
