@@ -2,56 +2,72 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// GET /api/seed - Crear usuario admin (para fácil acceso desde navegador)
+// GET /api/seed - Crear usuarios iniciales (para fácil acceso desde navegador)
 export async function GET() {
-    return createAdminUser();
+    return createInitialUsers();
 }
 
-// POST /api/seed - Crear usuario admin por defecto
-// IMPORTANTE: Eliminar o proteger en producción
+// POST /api/seed - Crear usuarios iniciales
 export async function POST() {
-    return createAdminUser();
+    return createInitialUsers();
 }
 
-async function createAdminUser() {
+async function createInitialUsers() {
     try {
-        // Verificar si ya existe admin
+        const hashedPassword = await bcrypt.hash("admin123", 10);
+        const results = [];
+
+        // Crear admin
         const existingAdmin = await prisma.user.findUnique({
             where: { email: "admin@oropezas.com" }
         });
 
-        if (existingAdmin) {
-            return NextResponse.json({
-                message: "Usuario admin ya existe",
-                email: existingAdmin.email
+        if (!existingAdmin) {
+            const admin = await prisma.user.create({
+                data: {
+                    email: "admin@oropezas.com",
+                    name: "Administrador",
+                    password: hashedPassword,
+                    role: "ADMIN",
+                    isActive: true
+                }
             });
+            results.push({ user: "admin", email: admin.email, status: "created" });
+        } else {
+            results.push({ user: "admin", email: existingAdmin.email, status: "already exists" });
         }
 
-        // Hash de contraseña
-        const hashedPassword = await bcrypt.hash("admin123", 10);
-
-        // Crear admin
-        const admin = await prisma.user.create({
-            data: {
-                email: "admin@oropezas.com",
-                name: "Administrador",
-                password: hashedPassword,
-                role: "ADMIN",
-                isActive: true
-            }
+        // Crear vendedor
+        const existingVendedor = await prisma.user.findUnique({
+            where: { email: "vendedor@oropezas.com" }
         });
 
+        if (!existingVendedor) {
+            const vendedor = await prisma.user.create({
+                data: {
+                    email: "vendedor@oropezas.com",
+                    name: "Juan Vendedor",
+                    password: hashedPassword,
+                    role: "VENDEDOR",
+                    isActive: true
+                }
+            });
+            results.push({ user: "vendedor", email: vendedor.email, status: "created" });
+        } else {
+            results.push({ user: "vendedor", email: existingVendedor.email, status: "already exists" });
+        }
+
         return NextResponse.json({
-            message: "Usuario admin creado exitosamente",
-            email: admin.email,
+            message: "Usuarios iniciales procesados",
             password: "admin123",
-            note: "Cambia la contraseña después del primer login"
+            users: results
         }, { status: 201 });
     } catch (error) {
-        console.error("Error creating admin:", error);
+        console.error("Error creating users:", error);
         return NextResponse.json(
-            { error: "Error al crear usuario admin" },
+            { error: "Error al crear usuarios", details: String(error) },
             { status: 500 }
         );
     }
 }
+
