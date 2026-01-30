@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTenantFromSession, getUserFromSession } from "@/lib/tenant-context";
+import { calculateTaxes } from "@/lib/tax-utils";
 
 // GET /api/sales-notes - Listar notas de venta
 export async function GET(request: NextRequest) {
@@ -158,8 +159,10 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const tax = Math.round(subtotal * 0.18 * 100) / 100;
-        const total = Math.round((subtotal - discount + tax) * 100) / 100;
+        // IGV incluido: extraer IGV del precio
+        const taxCalc = calculateTaxes(subtotal - discount, true);
+        const tax = taxCalc.tax;
+        const total = taxCalc.total;
         const change = (amountPaid || total) - total;
 
         const salesNote = await prisma.salesNote.create({

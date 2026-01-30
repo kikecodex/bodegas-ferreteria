@@ -547,6 +547,7 @@ export default function ProductosPage() {
                     description: editingProduct.description || "",
                     reorderPoint: editingProduct.reorderPoint || null,
                     preferredVendor: editingProduct.preferredVendor || "",
+                    igvExento: (editingProduct as { igvExento?: boolean }).igvExento || false,
                     unitsOfMeasure: editingProduct.unitsOfMeasure || []
                 } : null}
                 initialCode={scannedCode}

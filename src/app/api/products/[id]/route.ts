@@ -85,7 +85,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             preferredVendor,
             image,
             isActive,
-            isFeatured
+            isFeatured,
+            igvExento  // Producto exonerado de IGV
         } = body;
 
         // Verificar que existe y pertenece al tenant
@@ -137,7 +138,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 ...(preferredVendor !== undefined && { preferredVendor: preferredVendor?.trim() || null }),
                 ...(image !== undefined && { image }),
                 ...(isActive !== undefined && { isActive }),
-                ...(isFeatured !== undefined && { isFeatured })
+                ...(isFeatured !== undefined && { isFeatured }),
+                ...(igvExento !== undefined && { igvExento })  // Exoneración de IGV
             },
             include: {
                 category: true,

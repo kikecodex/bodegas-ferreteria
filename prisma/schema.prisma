@@ -168,6 +168,7 @@ model Product {
   // Estado
   isActive    Boolean   @default(true)
   isFeatured  Boolean   @default(false)
+  igvExento   Boolean   @default(false)  // Productos exonerados de IGV (arroz, etc.)
   
   // Imágenes
   image       String?

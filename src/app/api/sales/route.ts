@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTenantFromSession } from "@/lib/tenant-context";
+import { calculateTaxes } from "@/lib/tax-utils";
 
 // GET /api/sales - Listar ventas con filtros
 export async function GET(request: NextRequest) {
@@ -164,12 +165,24 @@ export async function POST(request: NextRequest) {
         // Calcular totales
         let subtotal = 0;
         let totalDiscount = 0;
+        let taxableAmount = 0;
+        let exemptAmount = 0;
+
         const saleItems = items.map((item: { productId: string; quantity: number; unitPrice: number; discount?: number }) => {
             const product = productMap.get(item.productId)!;
             const itemSubtotal = item.quantity * item.unitPrice;
             const itemDiscount = item.discount || 0;
+            const itemNet = itemSubtotal - itemDiscount;
+
             subtotal += itemSubtotal;
             totalDiscount += itemDiscount;
+
+            // Separar montos gravados y exonerados
+            if (product.igvExento) {
+                exemptAmount += itemNet;
+            } else {
+                taxableAmount += itemNet;
+            }
 
             return {
                 productId: item.productId,
@@ -178,14 +191,14 @@ export async function POST(request: NextRequest) {
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
                 discount: itemDiscount,
-                subtotal: itemSubtotal - itemDiscount
+                subtotal: itemNet
             };
         });
 
-        // Calcular IGV (18%)
-        const taxableAmount = subtotal - totalDiscount;
-        const tax = Math.round(taxableAmount * 0.18 * 100) / 100;
-        const total = Math.round((taxableAmount + tax) * 100) / 100;
+        // Calcular IGV - Solo productos gravados (precios ya incluyen IGV)
+        const taxCalc = calculateTaxes(taxableAmount, true);
+        const tax = taxCalc.tax;
+        const total = taxCalc.total + exemptAmount;  // Gravados + exonerados
 
         // Calcular vuelto
         const paid = amountPaid || total;

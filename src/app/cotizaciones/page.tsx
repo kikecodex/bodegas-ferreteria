@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { calculateTaxes } from "@/lib/tax-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -193,9 +194,12 @@ export default function CotizacionesPage() {
         setCart(prev => prev.filter(i => i.productId !== productId));
     };
 
-    const subtotal = cart.reduce((sum, i) => sum + i.subtotal, 0);
-    const tax = Math.round(subtotal * 0.18 * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
+    // Calcular totales - Los precios YA INCLUYEN IGV
+    const cartTotal = cart.reduce((sum, i) => sum + i.subtotal, 0);
+    const taxCalc = calculateTaxes(cartTotal, true); // true = IGV incluido
+    const subtotal = taxCalc.subtotal;
+    const tax = taxCalc.tax;
+    const total = taxCalc.total;
 
     const handleSubmit = async () => {
         if (cart.length === 0) return;

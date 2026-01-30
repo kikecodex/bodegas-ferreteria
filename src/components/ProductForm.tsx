@@ -40,6 +40,7 @@ interface ProductFormData {
     reorderPoint: number | null;
     preferredVendor: string;
     image: string;
+    igvExento: boolean;  // Producto exonerado de IGV
     unitsOfMeasure: UnitOfMeasure[];
 }
 
@@ -65,6 +66,7 @@ const emptyProduct: ProductFormData = {
     reorderPoint: null,
     preferredVendor: "",
     image: "",
+    igvExento: false,
     unitsOfMeasure: []
 };
 
@@ -359,6 +361,25 @@ export function ProductForm({ isOpen, onClose, onSave, editProduct, initialCode 
                                 onChange={(e) => handleChange("preferredVendor", e.target.value)}
                                 placeholder="Nombre del proveedor (opcional)"
                             />
+                        </div>
+
+                        {/* Exoneración de IGV */}
+                        <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                            <input
+                                type="checkbox"
+                                id="igvExento"
+                                checked={formData.igvExento}
+                                onChange={(e) => handleChange("igvExento", e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300"
+                            />
+                            <div>
+                                <Label htmlFor="igvExento" className="cursor-pointer font-medium">
+                                    Producto exonerado de IGV
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Marcar si el producto está exonerado del IGV (ej: arroz, azúcar)
+                                </p>
+                            </div>
                         </div>
 
                         <Separator />

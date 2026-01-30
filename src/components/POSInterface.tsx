@@ -24,6 +24,7 @@ import {
     CheckCircle
 } from "lucide-react";
 import { ClientSelector } from "@/components/ClientSelector";
+import { calculateTaxes } from "@/lib/tax-utils";
 
 interface Product {
     id: string;
@@ -34,6 +35,7 @@ interface Product {
     unit: string;
     image?: string;
     category?: { name: string };
+    igvExento?: boolean;  // Productos exonerados de IGV
 }
 
 interface CartItem {
@@ -45,6 +47,7 @@ interface CartItem {
     discount: number;
     subtotal: number;
     maxStock: number;
+    igvExento?: boolean;  // Producto exonerado de IGV
 }
 
 interface POSInterfaceProps {
@@ -92,12 +95,20 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
 
     const searchRef = useRef<HTMLInputElement>(null);
 
-    // Calcular totales
-    const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-    const totalDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
-    const taxableAmount = subtotal - totalDiscount;
-    const tax = Math.round(taxableAmount * 0.18 * 100) / 100;
-    const total = Math.round((taxableAmount + tax) * 100) / 100;
+    // Calcular totales - Los precios YA INCLUYEN IGV
+    // Separar productos gravados y exonerados
+    const taxableItems = cart.filter(item => !item.igvExento);
+    const exemptItems = cart.filter(item => item.igvExento);
+
+    const taxableTotal = taxableItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const taxableDiscount = taxableItems.reduce((sum, item) => sum + item.discount, 0);
+    const exemptTotal = exemptItems.reduce((sum, item) => sum + item.subtotal - item.discount, 0);
+
+    // IGV solo para productos gravados (incluido en precio)
+    const taxCalc = calculateTaxes(taxableTotal - taxableDiscount, true);
+    const subtotal = taxCalc.subtotal + exemptTotal; // Base gravada + exonerado
+    const tax = taxCalc.tax;                         // IGV solo de productos gravados
+    const total = taxCalc.total + exemptTotal;       // Total con gravados y exonerados
     const change = Math.max(0, parseFloat(amountPaid || "0") - total);
 
     // Buscar productos
@@ -157,7 +168,8 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                 quantity: 1,
                 discount: 0,
                 subtotal: product.price,
-                maxStock: product.stock
+                maxStock: product.stock,
+                igvExento: product.igvExento || false  // Heredar estado de exoneración
             }];
         });
 
@@ -428,10 +440,10 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             <span>Subtotal</span>
                             <span>S/ {subtotal.toFixed(2)}</span>
                         </div>
-                        {totalDiscount > 0 && (
+                        {cart.reduce((sum, item) => sum + item.discount, 0) > 0 && (
                             <div className="flex justify-between text-sm text-green-600">
                                 <span>Descuento</span>
-                                <span>-S/ {totalDiscount.toFixed(2)}</span>
+                                <span>-S/ {cart.reduce((sum, item) => sum + item.discount, 0).toFixed(2)}</span>
                             </div>
                         )}
                         <div className="flex justify-between text-sm text-muted-foreground">

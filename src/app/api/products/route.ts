@@ -119,7 +119,8 @@ export async function POST(request: NextRequest) {
             reorderPoint,
             preferredVendor,
             image,
-            unitsOfMeasure // Array de unidades adicionales
+            igvExento,       // Producto exonerado de IGV
+            unitsOfMeasure   // Array de unidades adicionales
         } = body;
 
         // Validaciones
@@ -183,6 +184,7 @@ export async function POST(request: NextRequest) {
                 reorderPoint: reorderPoint ? parseInt(reorderPoint) : null,
                 preferredVendor: preferredVendor?.trim() || null,
                 image: image || null,
+                igvExento: igvExento || false,  // Exoneración de IGV
                 tenantId: tenant.tenantId,
                 // Crear unidad de medida por defecto (unidad base)
                 unitsOfMeasure: {

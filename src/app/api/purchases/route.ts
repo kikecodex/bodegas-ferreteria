@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTenantFromSession } from "@/lib/tenant-context";
+import { calculateTaxes } from "@/lib/tax-utils";
 
 // GET /api/purchases - Listar compras
 export async function GET(request: NextRequest) {
@@ -121,8 +122,10 @@ export async function POST(request: NextRequest) {
             };
         });
 
-        const tax = Math.round(subtotal * 0.18 * 100) / 100;
-        const total = Math.round((subtotal + tax) * 100) / 100;
+        // IGV incluido: extraer IGV del precio
+        const taxCalc = calculateTaxes(subtotal, true);
+        const tax = taxCalc.tax;
+        const total = taxCalc.total;
 
         // Generar número de compra (por tenant)
         const lastPurchase = await prisma.purchase.findFirst({
