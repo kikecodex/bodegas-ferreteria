@@ -359,6 +359,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
             }
             if (e.key === "F4" && cart.length > 0) {
                 e.preventDefault();
+                setAmountPaid(total.toFixed(2)); // Por defecto = total
                 setShowPayment(true);
             }
             if (e.key === "Escape") {
@@ -534,7 +535,10 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             className="w-full h-14 text-lg"
                             size="lg"
                             disabled={cart.length === 0}
-                            onClick={() => setShowPayment(true)}
+                            onClick={() => {
+                                setAmountPaid(total.toFixed(2)); // Por defecto = total
+                                setShowPayment(true);
+                            }}
                         >
                             <Calculator className="h-5 w-5 mr-2" />
                             COBRAR (F4)
@@ -651,18 +655,13 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                         placeholder={total.toFixed(2)}
                                         className="text-2xl h-14 text-center"
                                         autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" && parseFloat(amountPaid || "0") >= total) {
+                                                e.preventDefault();
+                                                processSale();
+                                            }
+                                        }}
                                     />
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {[10, 20, 50, 100].map(val => (
-                                            <Button
-                                                key={val}
-                                                variant="outline"
-                                                onClick={() => setAmountPaid(val.toString())}
-                                            >
-                                                S/ {val}
-                                            </Button>
-                                        ))}
-                                    </div>
                                     {parseFloat(amountPaid) >= total && (
                                         <div className="text-center py-3 bg-green-500/10 rounded-lg">
                                             <p className="text-sm text-muted-foreground">Vuelto</p>
