@@ -156,8 +156,12 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
         try {
             const trimmedQuery = query.trim();
 
-            // Detectar si parece ser un código de barras (numérico o código sin espacios)
-            const looksLikeBarcode = /^[\d\w-]+$/.test(trimmedQuery) && !trimmedQuery.includes(' ');
+            // Detectar si parece ser un código de barras:
+            // - Es mayormente numérico (más del 50% son dígitos)
+            // - O tiene al menos 8 caracteres sin espacios y contiene números
+            const digitCount = (trimmedQuery.match(/\d/g) || []).length;
+            const isNumeric = digitCount > 0 && digitCount >= trimmedQuery.length * 0.5;
+            const looksLikeBarcode = !trimmedQuery.includes(' ') && (isNumeric || (trimmedQuery.length >= 8 && digitCount >= 4));
 
             if (looksLikeBarcode) {
                 // Primero intentar búsqueda exacta por código de barras
