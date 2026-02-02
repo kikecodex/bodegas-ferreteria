@@ -373,23 +373,23 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
 
     return (
         <div className="flex h-[calc(100vh-120px)] gap-4">
-            {/* Panel izquierdo - Búsqueda y productos */}
-            <div className="w-1/2 flex flex-col gap-4">
-                {/* Barra de búsqueda */}
+            {/* Panel izquierdo - Búsqueda, resultados y totales */}
+            <div className="w-1/2 flex flex-col gap-3">
+                {/* Barra de búsqueda - más compacta */}
                 <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 ref={searchRef}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Buscar producto por código o nombre... (F2)"
-                                className="pl-10 h-12 text-lg"
+                                placeholder="Buscar producto... (F2)"
+                                className="pl-8 h-9 text-sm"
                                 autoFocus
                             />
                             {loading && (
-                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+                                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
                             )}
                         </div>
                     </CardContent>
@@ -397,12 +397,12 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
 
                 {/* Resultados de búsqueda */}
                 <Card className="flex-1 overflow-hidden">
-                    <CardContent className="p-4 h-full overflow-y-auto">
+                    <CardContent className="p-3 h-full overflow-y-auto">
                         {products.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                                <Package className="h-16 w-16 mb-4 opacity-50" />
-                                <p>Busca productos para agregarlos</p>
-                                <p className="text-sm">Escanea código de barras o escribe el nombre</p>
+                                <Package className="h-12 w-12 mb-3 opacity-50" />
+                                <p className="text-sm">Busca productos para agregarlos</p>
+                                <p className="text-xs">Escanea código de barras o escribe el nombre</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
@@ -411,21 +411,21 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                         key={product.id}
                                         onClick={() => addToCart(product)}
                                         disabled={product.stock === 0}
-                                        className="w-full p-3 flex items-center justify-between rounded-lg border hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full p-2 flex items-center justify-between rounded-lg border hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                                                <Package className="h-6 w-6" />
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                                                <Package className="h-5 w-5" />
                                             </div>
                                             <div className="text-left">
-                                                <p className="font-medium">{product.name}</p>
-                                                <p className="text-sm text-muted-foreground">
+                                                <p className="font-medium text-sm">{product.name}</p>
+                                                <p className="text-xs text-muted-foreground">
                                                     {product.code} • Stock: {product.stock} {product.unit}
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xl font-bold">S/ {product.price.toFixed(2)}</p>
+                                            <p className="text-lg font-bold">S/ {product.price.toFixed(2)}</p>
                                             {product.stock === 0 && (
                                                 <Badge variant="destructive">Sin stock</Badge>
                                             )}
@@ -436,16 +436,52 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Totales y Pago - Ahora en el lado izquierdo */}
+                <Card className="bg-primary/5">
+                    <CardContent className="p-3 space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span>Subtotal</span>
+                            <span>S/ {subtotal.toFixed(2)}</span>
+                        </div>
+                        {cart.reduce((sum, item) => sum + item.discount, 0) > 0 && (
+                            <div className="flex justify-between text-sm text-green-600">
+                                <span>Descuento</span>
+                                <span>-S/ {cart.reduce((sum, item) => sum + item.discount, 0).toFixed(2)}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>IGV (18%)</span>
+                            <span>S/ {tax.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-xl font-bold border-t pt-2">
+                            <span>TOTAL</span>
+                            <span>S/ {total.toFixed(2)}</span>
+                        </div>
+
+                        <Button
+                            className="w-full h-12 text-lg"
+                            size="lg"
+                            disabled={cart.length === 0}
+                            onClick={() => {
+                                setAmountPaid(total.toFixed(2));
+                                setShowPayment(true);
+                            }}
+                        >
+                            <Calculator className="h-5 w-5 mr-2" />
+                            COBRAR (F4)
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Panel derecho - Carrito */}
-            <div className="w-1/2 flex flex-col gap-4">
-                {/* Carrito */}
-                <Card className="flex-1 overflow-hidden">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center justify-between">
+            {/* Panel derecho - Solo Carrito con productos */}
+            <div className="w-1/2 flex flex-col">
+                <Card className="flex-1 overflow-hidden flex flex-col">
+                    <CardHeader className="py-2 px-4 flex-shrink-0">
+                        <CardTitle className="flex items-center justify-between text-base">
                             <span className="flex items-center gap-2">
-                                <ShoppingCart className="h-5 w-5" />
+                                <ShoppingCart className="h-4 w-4" />
                                 Carrito ({cart.length})
                             </span>
                             {cart.length > 0 && (
@@ -456,11 +492,11 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             )}
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0 h-[calc(100%-60px)] overflow-y-auto">
+                    <CardContent className="p-3 pt-0 flex-1 overflow-y-auto">
                         {cart.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                                <ShoppingCart className="h-16 w-16 mb-4 opacity-50" />
-                                <p>Carrito vacío</p>
+                                <ShoppingCart className="h-12 w-12 mb-3 opacity-50" />
+                                <p className="text-sm">Carrito vacío</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
@@ -490,8 +526,8 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                                 <Plus className="h-3 w-3" />
                                             </Button>
                                         </div>
-                                        <div className="w-24 text-right">
-                                            <p className="font-bold">S/ {item.subtotal.toFixed(2)}</p>
+                                        <div className="w-20 text-right">
+                                            <p className="font-bold text-sm">S/ {item.subtotal.toFixed(2)}</p>
                                             <p className="text-xs text-muted-foreground">@ {item.price.toFixed(2)}</p>
                                         </div>
                                         <Button
@@ -506,43 +542,6 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                 ))}
                             </div>
                         )}
-                    </CardContent>
-                </Card>
-
-                {/* Totales y Pago */}
-                <Card className="bg-primary/5">
-                    <CardContent className="p-4 space-y-3">
-                        <div className="flex justify-between text-sm">
-                            <span>Subtotal</span>
-                            <span>S/ {subtotal.toFixed(2)}</span>
-                        </div>
-                        {cart.reduce((sum, item) => sum + item.discount, 0) > 0 && (
-                            <div className="flex justify-between text-sm text-green-600">
-                                <span>Descuento</span>
-                                <span>-S/ {cart.reduce((sum, item) => sum + item.discount, 0).toFixed(2)}</span>
-                            </div>
-                        )}
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>IGV (18%)</span>
-                            <span>S/ {tax.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-2xl font-bold border-t pt-2">
-                            <span>TOTAL</span>
-                            <span>S/ {total.toFixed(2)}</span>
-                        </div>
-
-                        <Button
-                            className="w-full h-14 text-lg"
-                            size="lg"
-                            disabled={cart.length === 0}
-                            onClick={() => {
-                                setAmountPaid(total.toFixed(2)); // Por defecto = total
-                                setShowPayment(true);
-                            }}
-                        >
-                            <Calculator className="h-5 w-5 mr-2" />
-                            COBRAR (F4)
-                        </Button>
                     </CardContent>
                 </Card>
             </div>
