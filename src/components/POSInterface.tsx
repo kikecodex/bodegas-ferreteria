@@ -111,7 +111,41 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
     const total = taxCalc.total + exemptTotal;       // Total con gravados y exonerados
     const change = Math.max(0, parseFloat(amountPaid || "0") - total);
 
-    // Buscar productos
+    // Función auxiliar para agregar producto directamente al carrito
+    const addProductToCart = useCallback((product: Product) => {
+        setCart(prev => {
+            const existing = prev.find(item => item.productId === product.id);
+            if (existing) {
+                // Incrementar cantidad si hay stock disponible
+                if (existing.quantity < product.stock) {
+                    return prev.map(item =>
+                        item.productId === product.id
+                            ? {
+                                ...item,
+                                quantity: item.quantity + 1,
+                                subtotal: (item.quantity + 1) * item.price
+                            }
+                            : item
+                    );
+                }
+                return prev;
+            }
+            // Agregar nuevo item
+            return [...prev, {
+                productId: product.id,
+                code: product.code,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+                discount: 0,
+                subtotal: product.price,
+                maxStock: product.stock,
+                igvExento: product.igvExento || false
+            }];
+        });
+    }, []);
+
+    // Buscar productos - Primero intenta búsqueda exacta por código de barras
     const searchProducts = useCallback(async (query: string) => {
         if (!query.trim()) {
             setProducts([]);
@@ -120,7 +154,47 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
 
         setLoading(true);
         try {
-            const res = await fetch(`/api/products?search=${encodeURIComponent(query)}&limit=10`);
+            const trimmedQuery = query.trim();
+
+            // Detectar si parece ser un código de barras (numérico o código sin espacios)
+            const looksLikeBarcode = /^[\d\w-]+$/.test(trimmedQuery) && !trimmedQuery.includes(' ');
+
+            if (looksLikeBarcode) {
+                // Primero intentar búsqueda exacta por código de barras
+                const barcodeRes = await fetch(`/api/products/by-code?code=${encodeURIComponent(trimmedQuery)}`);
+                if (barcodeRes.ok) {
+                    const barcodeData = await barcodeRes.json();
+                    if (barcodeData.found && barcodeData.product) {
+                        // ¡Producto encontrado por código exacto! Agregar directamente al carrito
+                        const product = barcodeData.product;
+
+                        // Si el producto tiene la unidad de medida que coincidió, usar ese precio
+                        const matchedUnit = barcodeData.matchedUnit;
+                        const finalProduct: Product = {
+                            id: product.id,
+                            code: product.code,
+                            name: matchedUnit
+                                ? `${product.name} (${matchedUnit.name})`
+                                : product.name,
+                            price: matchedUnit?.price ?? product.price,
+                            stock: product.stock,
+                            unit: matchedUnit?.abbreviation ?? product.unit,
+                            category: product.category,
+                            igvExento: product.igvExento
+                        };
+
+                        addProductToCart(finalProduct);
+                        setSearch("");
+                        setProducts([]);
+                        searchRef.current?.focus();
+                        setLoading(false);
+                        return;
+                    }
+                }
+            }
+
+            // Búsqueda normal por nombre/código parcial
+            const res = await fetch(`/api/products?search=${encodeURIComponent(trimmedQuery)}&limit=10`);
             if (res.ok) {
                 const data = await res.json();
                 setProducts(data.products || []);
@@ -130,7 +204,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [addProductToCart]);
 
     // Debounce search
     useEffect(() => {
