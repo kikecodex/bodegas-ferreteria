@@ -90,6 +90,10 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
         change: number;
     } | null>(null);
 
+    // Estado para edición inline de precio
+    const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+    const [editingPriceValue, setEditingPriceValue] = useState("");
+
     const searchRef = useRef<HTMLInputElement>(null);
 
     // Calcular totales - Los precios YA INCLUYEN IGV
@@ -253,15 +257,45 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
         searchRef.current?.focus();
     };
 
-    // Modificar cantidad
+    // Modificar cantidad (incremento/decremento)
     const updateQuantity = (productId: string, delta: number) => {
         setCart(prev => prev.map(item => {
             if (item.productId === productId) {
-                const newQty = Math.max(1, Math.min(item.maxStock, item.quantity + delta));
+                const newQty = Math.max(0.01, Math.min(item.maxStock, item.quantity + delta));
                 return {
                     ...item,
                     quantity: newQty,
                     subtotal: newQty * item.price
+                };
+            }
+            return item;
+        }));
+    };
+
+    // Establecer cantidad directamente (para entrada decimal)
+    const setQuantity = (productId: string, newQty: number) => {
+        setCart(prev => prev.map(item => {
+            if (item.productId === productId) {
+                const validQty = Math.max(0.01, Math.min(item.maxStock, newQty));
+                return {
+                    ...item,
+                    quantity: validQty,
+                    subtotal: validQty * item.price
+                };
+            }
+            return item;
+        }));
+    };
+
+    // Actualizar precio de un item (para edición rápida)
+    const updateItemPrice = (productId: string, newPrice: number) => {
+        setCart(prev => prev.map(item => {
+            if (item.productId === productId) {
+                const validPrice = Math.max(0.01, newPrice);
+                return {
+                    ...item,
+                    price: validPrice,
+                    subtotal: item.quantity * validPrice
                 };
             }
             return item;
@@ -502,8 +536,8 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             <div className="space-y-2">
                                 {cart.map(item => (
                                     <div key={item.productId} className="flex items-center gap-2 p-2 rounded-lg border">
-                                        <div className="flex-1">
-                                            <p className="font-medium text-sm">{item.name}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-sm truncate">{item.name}</p>
                                             <p className="text-xs text-muted-foreground">{item.code}</p>
                                         </div>
                                         <div className="flex items-center gap-1">
@@ -511,24 +545,77 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                                 variant="outline"
                                                 size="icon"
                                                 className="h-7 w-7"
-                                                onClick={() => updateQuantity(item.productId, -1)}
+                                                onClick={() => updateQuantity(item.productId, -0.5)}
                                             >
                                                 <Minus className="h-3 w-3" />
                                             </Button>
-                                            <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0.01"
+                                                max={item.maxStock}
+                                                value={item.quantity}
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    if (!isNaN(val) && val > 0) {
+                                                        setQuantity(item.productId, val);
+                                                    }
+                                                }}
+                                                className="w-16 h-7 text-center text-sm font-medium px-1"
+                                            />
                                             <Button
                                                 variant="outline"
                                                 size="icon"
                                                 className="h-7 w-7"
-                                                onClick={() => updateQuantity(item.productId, 1)}
+                                                onClick={() => updateQuantity(item.productId, 0.5)}
                                                 disabled={item.quantity >= item.maxStock}
                                             >
                                                 <Plus className="h-3 w-3" />
                                             </Button>
                                         </div>
-                                        <div className="w-20 text-right">
+                                        <div className="w-24 text-right">
                                             <p className="font-bold text-sm">S/ {item.subtotal.toFixed(2)}</p>
-                                            <p className="text-xs text-muted-foreground">@ {item.price.toFixed(2)}</p>
+                                            {editingPriceId === item.productId ? (
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    autoFocus
+                                                    value={editingPriceValue}
+                                                    onChange={(e) => setEditingPriceValue(e.target.value)}
+                                                    onBlur={() => {
+                                                        const newPrice = parseFloat(editingPriceValue);
+                                                        if (!isNaN(newPrice) && newPrice > 0) {
+                                                            updateItemPrice(item.productId, newPrice);
+                                                        }
+                                                        setEditingPriceId(null);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            const newPrice = parseFloat(editingPriceValue);
+                                                            if (!isNaN(newPrice) && newPrice > 0) {
+                                                                updateItemPrice(item.productId, newPrice);
+                                                            }
+                                                            setEditingPriceId(null);
+                                                        }
+                                                        if (e.key === "Escape") {
+                                                            setEditingPriceId(null);
+                                                        }
+                                                    }}
+                                                    className="w-20 h-5 text-xs px-1 text-right"
+                                                />
+                                            ) : (
+                                                <p
+                                                    className="text-xs text-muted-foreground cursor-pointer hover:text-primary hover:underline"
+                                                    onDoubleClick={() => {
+                                                        setEditingPriceId(item.productId);
+                                                        setEditingPriceValue(item.price.toFixed(2));
+                                                    }}
+                                                    title="Doble clic para editar precio"
+                                                >
+                                                    @ {item.price.toFixed(2)}
+                                                </p>
+                                            )}
                                         </div>
                                         <Button
                                             variant="ghost"
