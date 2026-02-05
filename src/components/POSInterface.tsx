@@ -314,8 +314,10 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
         searchRef.current?.focus();
     };
 
-    // Procesar venta
+    // Procesar venta - PROTECCIÓN ANTI-DUPLICADOS
     const processSale = async () => {
+        // Prevenir múltiples ejecuciones (doble clic, Enter rápido, etc.)
+        if (processing) return;
         if (cart.length === 0) return;
 
         // Validar cliente para Factura
@@ -772,7 +774,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                         className="text-2xl h-14 text-center"
                                         autoFocus
                                         onKeyDown={(e) => {
-                                            if (e.key === "Enter" && parseFloat(amountPaid || "0") >= total) {
+                                            if (e.key === "Enter" && !processing && parseFloat(amountPaid || "0") >= total) {
                                                 e.preventDefault();
                                                 processSale();
                                             }
