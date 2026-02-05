@@ -123,10 +123,10 @@ export async function POST(request: NextRequest) {
             unitsOfMeasure   // Array de unidades adicionales
         } = body;
 
-        // Validaciones
-        if (!code || !name || !categoryId) {
+        // Validaciones - Código es opcional (se genera automáticamente si no se proporciona)
+        if (!name || !categoryId) {
             return NextResponse.json(
-                { error: "Código, nombre y categoría son requeridos" },
+                { error: "Nombre y categoría son requeridos" },
                 { status: 400 }
             );
         }
@@ -138,10 +138,19 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verificar código único en este tenant
+        // Generar código automático si no se proporciona
+        // Formato: AUTO-[timestamp en base36]-[random 4 chars]
+        let finalCode = code?.trim() || "";
+        if (!finalCode) {
+            const timestamp = Date.now().toString(36).toUpperCase();
+            const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+            finalCode = `AUTO-${timestamp}${random}`;
+        }
+
+        // Verificar código único en este tenant (solo si se proporcionó un código)
         const existing = await prisma.product.findFirst({
             where: {
-                code: code.trim(),
+                code: finalCode,
                 tenantId: tenant.tenantId
             }
         });
@@ -171,7 +180,7 @@ export async function POST(request: NextRequest) {
         // Crear producto con unidades de medida
         const product = await prisma.product.create({
             data: {
-                code: code.trim(),
+                code: finalCode,
                 name: name.trim(),
                 description: description?.trim() || null,
                 price: parseFloat(price),

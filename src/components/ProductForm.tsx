@@ -16,7 +16,8 @@ import {
     ChevronDown,
     ChevronUp,
     FolderOpen,
-    Plus
+    Plus,
+    Hash
 } from "lucide-react";
 
 interface Category {
@@ -125,9 +126,10 @@ export function ProductForm({ isOpen, onClose, onSave, editProduct, initialCode 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validaciones
-        if (!formData.code || !formData.name || !formData.categoryId) {
-            alert("Código, nombre y categoría son requeridos");
+        // Validaciones - Solo nombre y categoría son requeridos
+        // El código es opcional (se genera automáticamente si no se proporciona)
+        if (!formData.name || !formData.categoryId) {
+            alert("Nombre y categoría son requeridos");
             return;
         }
 
@@ -187,28 +189,52 @@ export function ProductForm({ isOpen, onClose, onSave, editProduct, initialCode 
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Código */}
+                        {/* Código - Opcional */}
                         <div>
-                            <Label htmlFor="code">Código / SKU *</Label>
+                            <Label htmlFor="code" className="flex items-center gap-2">
+                                Código / SKU
+                                <span className="text-xs text-muted-foreground font-normal">
+                                    (opcional - se genera automáticamente si se deja vacío)
+                                </span>
+                            </Label>
                             <div className="flex gap-2">
                                 <Input
                                     id="code"
                                     value={formData.code}
                                     onChange={(e) => handleChange("code", e.target.value)}
-                                    placeholder="Código de barras o SKU"
+                                    placeholder="Código de barras, SKU o dejar vacío"
                                     disabled={isEditing}
                                     className="flex-1"
                                 />
                                 {!isEditing && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setShowScanner(true)}
-                                    >
-                                        <Barcode className="h-4 w-4" />
-                                    </Button>
+                                    <>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => {
+                                                // Generar código manual con prefijo MAN- y timestamp
+                                                const timestamp = Date.now().toString(36).toUpperCase();
+                                                const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+                                                handleChange("code", `MAN-${timestamp}${random}`);
+                                            }}
+                                            title="Generar código manual"
+                                        >
+                                            <Hash className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setShowScanner(true)}
+                                            title="Escanear código de barras"
+                                        >
+                                            <Barcode className="h-4 w-4" />
+                                        </Button>
+                                    </>
                                 )}
                             </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Para productos sin código de barras (alambre, tubos, etc.) deja vacío o genera uno manual
+                            </p>
                         </div>
 
                         {/* Nombre y Categoría */}
