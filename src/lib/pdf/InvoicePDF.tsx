@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
         marginBottom: 1
     },
     infoLabel: {
-        width: 60
+        width: 65
     },
     infoValue: {
         flex: 1
