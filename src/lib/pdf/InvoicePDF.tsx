@@ -290,7 +290,7 @@ export function InvoicePDF({ sale, company }: InvoicePDFProps) {
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>F.IMPRESION:</Text>
-                        <Text style={styles.infoValue}>{formatDateTime(sale.createdAt)}</Text>
+                        <Text style={styles.infoValue}>{formatDateTime(new Date().toISOString())}</Text>
                     </View>
                     {sale.client && (
                         <>
