@@ -274,66 +274,71 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
 
                     {/* Formulario nuevo cliente */}
                     {newClient && (
-                        <div className="border rounded-lg p-4 space-y-3 bg-green-50/50 border-green-200">
-                            <h4 className="font-medium flex items-center gap-2 text-green-700">
+                        <div className="border rounded-lg p-4 space-y-3 bg-white dark:bg-zinc-800 border-green-400">
+                            <h4 className="font-medium flex items-center gap-2 text-green-600">
                                 <Plus className="h-4 w-4" />
                                 Nuevo Cliente
                             </h4>
 
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label className="text-xs text-muted-foreground">Tipo Doc.</label>
+                                        <label className="text-xs text-gray-500 dark:text-gray-400">Tipo Doc.</label>
                                         <select
                                             value={newClient.documentType || "DNI"}
                                             onChange={(e) => setNewClient({ ...newClient, documentType: e.target.value })}
-                                            className="w-full h-10 px-3 border rounded-md bg-white"
+                                            className="w-full h-10 px-3 border rounded-md bg-white dark:bg-zinc-700 text-black dark:text-white"
                                         >
                                             <option value="DNI">DNI</option>
                                             <option value="RUC">RUC</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-xs text-muted-foreground">Número</label>
+                                        <label className="text-xs text-gray-500 dark:text-gray-400">Número *</label>
                                         <Input
                                             value={newClient.document || ""}
                                             onChange={(e) => setNewClient({ ...newClient, document: e.target.value })}
                                             placeholder={newClient.documentType === "RUC" ? "20XXXXXXXXX" : "XXXXXXXX"}
                                             maxLength={11}
+                                            className="bg-white dark:bg-zinc-700 text-black dark:text-white"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs text-muted-foreground">Nombre / Razón Social *</label>
+                                    <label className="text-xs text-gray-500 dark:text-gray-400">Nombre / Razón Social *</label>
                                     <Input
                                         value={newClient.name || ""}
                                         onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
                                         placeholder="Nombre completo o razón social"
+                                        className="bg-white dark:bg-zinc-700 text-black dark:text-white"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-muted-foreground">Dirección</label>
+                                    <label className="text-xs text-gray-500 dark:text-gray-400">Dirección</label>
                                     <Input
                                         value={newClient.address || ""}
                                         onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
                                         placeholder="Dirección fiscal"
+                                        className="bg-white dark:bg-zinc-700 text-black dark:text-white"
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label className="text-xs text-muted-foreground">Teléfono</label>
+                                        <label className="text-xs text-gray-500 dark:text-gray-400">Teléfono</label>
                                         <Input
                                             value={newClient.phone || ""}
                                             onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
                                             placeholder="999 999 999"
+                                            className="bg-white dark:bg-zinc-700 text-black dark:text-white"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-xs text-muted-foreground">Email</label>
+                                        <label className="text-xs text-gray-500 dark:text-gray-400">Email</label>
                                         <Input
                                             value={newClient.email || ""}
                                             onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
                                             placeholder="email@ejemplo.com"
+                                            className="bg-white dark:bg-zinc-700 text-black dark:text-white"
                                         />
                                     </div>
                                 </div>
