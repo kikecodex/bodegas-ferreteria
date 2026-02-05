@@ -117,6 +117,23 @@ export default function HistorialVentasPage() {
     const [clearInfo, setClearInfo] = useState<{ confirmationCode: string; salesCount: number } | null>(null);
     const [clearing, setClearing] = useState(false);
 
+    // Modal de duplicados
+    const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
+    const [duplicateGroups, setDuplicateGroups] = useState<Array<{
+        key: string;
+        total: number;
+        client: string | null;
+        sales: Array<{
+            id: string;
+            number: string;
+            total: number;
+            createdAt: string;
+            timeDiff: number | null;
+        }>;
+    }>>([]);
+    const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+    const [voidingId, setVoidingId] = useState<string | null>(null);
+
     const fetchSales = useCallback(async () => {
         setLoading(true);
         try {
@@ -160,18 +177,18 @@ export default function HistorialVentasPage() {
         }
     };
 
+    // Anular venta y restaurar stock
     const cancelSale = async (saleId: string) => {
-        if (!confirm("¿Está seguro de anular esta venta? Se reversará el stock.")) {
+        if (!confirm("¿Está seguro de anular esta venta?\n\n✓ Se restaurará el stock de los productos\n✓ La venta quedará marcada como ANULADA")) {
             return;
         }
 
         try {
-            const res = await fetch(`/api/sales/${saleId}`, {
-                method: "PUT",
+            const res = await fetch(`/api/sales/${saleId}/void`, {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    action: "ANULAR",
-                    reason: "Anulación manual"
+                    reason: "Anulación manual desde historial"
                 })
             });
 
@@ -180,7 +197,8 @@ export default function HistorialVentasPage() {
                 throw new Error(data.error);
             }
 
-            alert("Venta anulada correctamente");
+            const result = await res.json();
+            alert(`✓ ${result.message}\n\nStock restaurado:\n${result.stockRestored.map((s: { productName: string; quantity: number }) => `• ${s.productName}: +${s.quantity}`).join('\n')}`);
             fetchSales();
             setSelectedSale(null);
         } catch (error) {
@@ -280,6 +298,59 @@ export default function HistorialVentasPage() {
             alert("Error al limpiar historial");
         } finally {
             setClearing(false);
+        }
+    };
+
+    // Buscar ventas duplicadas
+    const fetchDuplicates = async () => {
+        setLoadingDuplicates(true);
+        try {
+            const res = await fetch("/api/sales/duplicates?threshold=60");
+            if (res.ok) {
+                const data = await res.json();
+                setDuplicateGroups(data.duplicateGroups || []);
+                setShowDuplicatesModal(true);
+            }
+        } catch (error) {
+            console.error("Error fetching duplicates:", error);
+            alert("Error al buscar duplicados");
+        } finally {
+            setLoadingDuplicates(false);
+        }
+    };
+
+    // Anular venta desde modal de duplicados
+    const voidSaleFromDuplicates = async (saleId: string, saleNumber: string) => {
+        if (!confirm(`¿Anular venta ${saleNumber}?\n\nSe restaurará el stock de los productos.`)) {
+            return;
+        }
+
+        setVoidingId(saleId);
+        try {
+            const res = await fetch(`/api/sales/${saleId}/void`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reason: "Venta duplicada - anulación masiva" })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error);
+            }
+
+            // Actualizar grupos de duplicados (remover la venta anulada)
+            setDuplicateGroups(prev =>
+                prev.map(group => ({
+                    ...group,
+                    sales: group.sales.filter(s => s.id !== saleId)
+                })).filter(group => group.sales.length > 1)
+            );
+
+            fetchSales();
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error al anular");
+        } finally {
+            setVoidingId(null);
         }
     };
 
@@ -393,6 +464,20 @@ export default function HistorialVentasPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchDuplicates}
+                            disabled={loadingDuplicates}
+                            className="text-amber-600 border-amber-300 hover:bg-amber-50"
+                        >
+                            {loadingDuplicates ? (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                                <AlertTriangle className="h-4 w-4 mr-1" />
+                            )}
+                            Buscar Duplicados
+                        </Button>
                         <Button
                             variant="destructive"
                             size="sm"
@@ -706,6 +791,101 @@ export default function HistorialVentasPage() {
                                         Eliminar Todo
                                     </>
                                 )}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de Duplicados */}
+            <Dialog open={showDuplicatesModal} onOpenChange={setShowDuplicatesModal}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            Ventas Potencialmente Duplicadas
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {duplicateGroups.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Receipt className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>No se encontraron ventas duplicadas 🎉</p>
+                                <p className="text-sm">El sistema verificó las últimas 7 días</p>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-sm text-muted-foreground">
+                                    Se encontraron {duplicateGroups.length} grupo(s) de ventas con el mismo total
+                                    y productos, creadas con menos de 60 segundos de diferencia.
+                                </p>
+
+                                {duplicateGroups.map((group, idx) => (
+                                    <Card key={idx} className="border-amber-200 bg-amber-50/50">
+                                        <CardHeader className="py-3">
+                                            <CardTitle className="text-sm flex justify-between items-center">
+                                                <span>Total: S/ {group.total.toFixed(2)}</span>
+                                                <Badge variant="outline">
+                                                    {group.sales.length} ventas
+                                                </Badge>
+                                            </CardTitle>
+                                            {group.client && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Cliente: {group.client}
+                                                </p>
+                                            )}
+                                        </CardHeader>
+                                        <CardContent className="py-2">
+                                            <div className="space-y-2">
+                                                {group.sales.map((sale, saleIdx) => (
+                                                    <div
+                                                        key={sale.id}
+                                                        className="flex items-center justify-between p-2 bg-white rounded border"
+                                                    >
+                                                        <div>
+                                                            <p className="font-mono text-sm">{sale.number}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {formatDate(sale.createdAt)}
+                                                                {sale.timeDiff && (
+                                                                    <span className="ml-2 text-amber-600">
+                                                                        (+{sale.timeDiff}s después)
+                                                                    </span>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        {saleIdx > 0 && (
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => voidSaleFromDuplicates(sale.id, sale.number)}
+                                                                disabled={voidingId === sale.id}
+                                                            >
+                                                                {voidingId === sale.id ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <>
+                                                                        <XCircle className="h-4 w-4 mr-1" />
+                                                                        Anular
+                                                                    </>
+                                                                )}
+                                                            </Button>
+                                                        )}
+                                                        {saleIdx === 0 && (
+                                                            <Badge className="bg-green-500">Original</Badge>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </>
+                        )}
+
+                        <div className="flex justify-end">
+                            <Button variant="outline" onClick={() => setShowDuplicatesModal(false)}>
+                                Cerrar
                             </Button>
                         </div>
                     </div>
