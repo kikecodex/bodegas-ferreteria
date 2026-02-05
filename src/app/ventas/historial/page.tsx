@@ -133,6 +133,7 @@ export default function HistorialVentasPage() {
     }>>([]);
     const [loadingDuplicates, setLoadingDuplicates] = useState(false);
     const [voidingId, setVoidingId] = useState<string | null>(null);
+    const [deletingVoided, setDeletingVoided] = useState(false);
 
     const fetchSales = useCallback(async () => {
         setLoading(true);
@@ -354,6 +355,33 @@ export default function HistorialVentasPage() {
         }
     };
 
+    // Eliminar TODAS las ventas anuladas de la base de datos
+    const deleteVoidedSales = async () => {
+        if (!confirm("¿ELIMINAR PERMANENTEMENTE todas las ventas ANULADAS?\n\n⚠️ Esta acción no se puede deshacer\n✓ Las ventas anuladas se borrarán del sistema")) {
+            return;
+        }
+
+        setDeletingVoided(true);
+        try {
+            const res = await fetch("/api/sales/delete-voided", {
+                method: "DELETE"
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error);
+            }
+
+            const result = await res.json();
+            alert(`✓ ${result.message}`);
+            fetchSales();
+        } catch (error) {
+            alert(error instanceof Error ? error.message : "Error al eliminar ventas anuladas");
+        } finally {
+            setDeletingVoided(false);
+        }
+    };
+
     const formatDate = (date: string) => {
         return new Date(date).toLocaleDateString("es-PE", {
             day: "2-digit",
@@ -477,6 +505,20 @@ export default function HistorialVentasPage() {
                                 <AlertTriangle className="h-4 w-4 mr-1" />
                             )}
                             Buscar Duplicados
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={deleteVoidedSales}
+                            disabled={deletingVoided}
+                            className="text-red-500 border-red-200 hover:bg-red-50"
+                        >
+                            {deletingVoided ? (
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                                <XCircle className="h-4 w-4 mr-1" />
+                            )}
+                            Limpiar Anuladas
                         </Button>
                         <Button
                             variant="destructive"
