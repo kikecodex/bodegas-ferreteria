@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTenantFromSession } from "@/lib/tenant-context";
 
-// POST /api/sales/[id]/void - Anular venta y restaurar stock
+// POST /api/sales/[id]/void - ELIMINAR venta permanentemente y restaurar stock
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -45,20 +45,11 @@ export async function POST(
             );
         }
 
-        // Anular venta y restaurar stock en transacción
-        const result = await prisma.$transaction(async (tx) => {
-            // 1. Marcar venta como anulada
-            const updatedSale = await tx.sale.update({
-                where: { id },
-                data: {
-                    status: "ANULADA",
-                    notes: sale.notes
-                        ? `${sale.notes}\n[ANULADA] ${reason || "Sin razón especificada"}`
-                        : `[ANULADA] ${reason || "Sin razón especificada"}`
-                }
-            });
+        const saleNumber = sale.number;
 
-            // 2. Restaurar stock de cada producto
+        // ELIMINAR venta y restaurar stock en transacción
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Restaurar stock de cada producto ANTES de eliminar
             const stockRestored: Array<{ productId: string; productName: string; quantity: number }> = [];
 
             for (const item of sale.items) {
@@ -77,7 +68,7 @@ export async function POST(
                         data: { stock: newStock }
                     });
 
-                    // Registrar movimiento de stock (entrada por anulación)
+                    // Registrar movimiento de stock (entrada por eliminación de venta duplicada)
                     await tx.stockMovement.create({
                         data: {
                             productId: item.productId,
@@ -85,8 +76,8 @@ export async function POST(
                             quantity: item.quantity,
                             previousStock,
                             newStock,
-                            reason: "Anulación de venta",
-                            reference: sale.number
+                            reason: reason || "Eliminación de venta duplicada",
+                            reference: saleNumber
                         }
                     });
 
@@ -98,20 +89,30 @@ export async function POST(
                 }
             }
 
-            return { sale: updatedSale, stockRestored };
+            // 2. Eliminar items de la venta
+            await tx.saleItem.deleteMany({
+                where: { saleId: id }
+            });
+
+            // 3. Eliminar la venta permanentemente
+            await tx.sale.delete({
+                where: { id }
+            });
+
+            return { stockRestored };
         });
 
         return NextResponse.json({
             success: true,
-            message: `Venta ${sale.number} anulada correctamente`,
-            saleNumber: sale.number,
+            message: `Venta ${saleNumber} eliminada permanentemente`,
+            saleNumber: saleNumber,
             stockRestored: result.stockRestored
         });
 
     } catch (error) {
-        console.error("Error voiding sale:", error);
+        console.error("Error deleting sale:", error);
         return NextResponse.json(
-            { error: "Error al anular venta" },
+            { error: "Error al eliminar venta" },
             { status: 500 }
         );
     }

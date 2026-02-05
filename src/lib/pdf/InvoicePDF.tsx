@@ -60,28 +60,29 @@ const TICKET_WIDTH = 204.3;
 // Estilos OPTIMIZADOS para impresora térmica POS-80
 const styles = StyleSheet.create({
     page: {
-        padding: 8,
-        fontSize: 9,  // Aumentado de 7 a 9
-        fontFamily: "Helvetica-Bold",  // Bold para mejor legibilidad
+        padding: 4,  // Reducido de 8 a 4
+        paddingTop: 2,  // Mínimo espacio arriba
+        fontSize: 9,
+        fontFamily: "Helvetica-Bold",
         width: TICKET_WIDTH,
-        color: "#000000"  // Negro puro
+        color: "#000000"
     },
     // Logo centrado arriba (sin línea para no afectar impresión)
     logoContainer: {
         alignItems: "center",
-        marginBottom: 2,
-        paddingBottom: 2
+        marginBottom: 0,
+        paddingBottom: 0
     },
     logo: {
-        width: 188,  // Ancho casi completo del papel (72mm - padding)
+        width: 188,
         height: "auto",
-        marginBottom: 4
+        marginBottom: 0  // Eliminado espacio debajo del logo
     },
     // Datos de empresa
     companySection: {
         alignItems: "center",
-        marginBottom: 6,
-        paddingBottom: 4,
+        marginBottom: 4,
+        paddingBottom: 3,
         borderBottomWidth: 1,
         borderBottomColor: "#000"
     },

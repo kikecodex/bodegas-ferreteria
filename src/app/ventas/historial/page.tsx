@@ -319,9 +319,9 @@ export default function HistorialVentasPage() {
         }
     };
 
-    // Anular venta desde modal de duplicados
+    // Eliminar venta desde modal de duplicados
     const voidSaleFromDuplicates = async (saleId: string, saleNumber: string) => {
-        if (!confirm(`¿Anular venta ${saleNumber}?\n\nSe restaurará el stock de los productos.`)) {
+        if (!confirm(`¿ELIMINAR venta ${saleNumber} permanentemente?\n\n✓ Se restaurará el stock\n✓ La venta se borrará del sistema`)) {
             return;
         }
 
@@ -330,7 +330,7 @@ export default function HistorialVentasPage() {
             const res = await fetch(`/api/sales/${saleId}/void`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ reason: "Venta duplicada - anulación masiva" })
+                body: JSON.stringify({ reason: "Venta duplicada - eliminación" })
             });
 
             if (!res.ok) {
@@ -338,7 +338,7 @@ export default function HistorialVentasPage() {
                 throw new Error(data.error);
             }
 
-            // Actualizar grupos de duplicados (remover la venta anulada)
+            // Actualizar grupos de duplicados (remover la venta eliminada)
             setDuplicateGroups(prev =>
                 prev.map(group => ({
                     ...group,
@@ -348,7 +348,7 @@ export default function HistorialVentasPage() {
 
             fetchSales();
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Error al anular");
+            alert(error instanceof Error ? error.message : "Error al eliminar");
         } finally {
             setVoidingId(null);
         }
@@ -865,8 +865,8 @@ export default function HistorialVentasPage() {
                                                                     <Loader2 className="h-4 w-4 animate-spin" />
                                                                 ) : (
                                                                     <>
-                                                                        <XCircle className="h-4 w-4 mr-1" />
-                                                                        Anular
+                                                                        <Trash2 className="h-4 w-4 mr-1" />
+                                                                        Eliminar
                                                                     </>
                                                                 )}
                                                             </Button>
