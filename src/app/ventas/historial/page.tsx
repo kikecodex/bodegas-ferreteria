@@ -32,7 +32,10 @@ import {
     XCircle,
     Loader2,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Printer,
+    Trash2,
+    AlertTriangle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -108,6 +111,12 @@ export default function HistorialVentasPage() {
     const [selectedSale, setSelectedSale] = useState<SaleDetail | null>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
 
+    // Modal de limpiar historial
+    const [showClearModal, setShowClearModal] = useState(false);
+    const [clearConfirmation, setClearConfirmation] = useState("");
+    const [clearInfo, setClearInfo] = useState<{ confirmationCode: string; salesCount: number } | null>(null);
+    const [clearing, setClearing] = useState(false);
+
     const fetchSales = useCallback(async () => {
         setLoading(true);
         try {
@@ -179,6 +188,56 @@ export default function HistorialVentasPage() {
         }
     };
 
+    // Imprimir ticket de venta
+    const printSale = (saleId: string) => {
+        window.open(`/api/sales/${saleId}/receipt`, "_blank");
+    };
+
+    // Obtener info para limpiar historial
+    const fetchClearInfo = async () => {
+        try {
+            const res = await fetch("/api/sales/clear-sales");
+            if (res.ok) {
+                const data = await res.json();
+                setClearInfo(data);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    };
+
+    // Limpiar historial de ventas
+    const clearHistory = async () => {
+        if (!clearInfo || clearConfirmation !== clearInfo.confirmationCode) {
+            alert("Código de confirmación incorrecto");
+            return;
+        }
+
+        setClearing(true);
+        try {
+            const res = await fetch("/api/sales/clear-sales", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirmation: clearConfirmation })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(`✅ ${data.message}`);
+                setShowClearModal(false);
+                setClearConfirmation("");
+                fetchSales();
+            } else {
+                const data = await res.json();
+                alert(data.error || "Error al limpiar historial");
+            }
+        } catch (error) {
+            alert("Error al limpiar historial");
+        } finally {
+            setClearing(false);
+        }
+    };
+
     const formatDate = (date: string) => {
         return new Date(date).toLocaleDateString("es-PE", {
             day: "2-digit",
@@ -241,8 +300,8 @@ export default function HistorialVentasPage() {
                                 key={item.label}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
-                                        ? "bg-red-600 text-white"
-                                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    ? "bg-red-600 text-white"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                     }`}
                             >
                                 <Icon className="h-5 w-5" />
@@ -289,6 +348,17 @@ export default function HistorialVentasPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                                fetchClearInfo();
+                                setShowClearModal(true);
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Limpiar Historial
+                        </Button>
                         <Button variant="outline" size="sm" onClick={fetchSales}>
                             <RefreshCw className="h-4 w-4 mr-1" />
                             Actualizar
@@ -407,6 +477,15 @@ export default function HistorialVentasPage() {
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-blue-500"
+                                                        onClick={() => printSale(sale.id)}
+                                                        title="Imprimir ticket"
+                                                    >
+                                                        <Printer className="h-4 w-4" />
+                                                    </Button>
                                                     {sale.status !== "ANULADA" && (
                                                         <Button
                                                             variant="ghost"
@@ -514,8 +593,77 @@ export default function HistorialVentasPage() {
                                 {getPaymentBadge(selectedSale.paymentMethod)}
                                 <Badge variant="outline">{selectedSale.documentType}</Badge>
                             </div>
+
+                            <div className="flex gap-2 border-t pt-4">
+                                <Button
+                                    className="flex-1"
+                                    onClick={() => printSale(selectedSale.id)}
+                                >
+                                    <Printer className="h-4 w-4 mr-2" />
+                                    Imprimir Ticket
+                                </Button>
+                            </div>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal de Limpiar Historial */}
+            <Dialog open={showClearModal} onOpenChange={setShowClearModal}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <AlertTriangle className="h-5 w-5" />
+                            Limpiar Historial de Ventas
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p className="text-red-800 font-medium">⚠️ Esta acción es irreversible</p>
+                            <p className="text-red-600 text-sm mt-1">
+                                Se eliminarán permanentemente {clearInfo?.salesCount || 0} ventas y todos sus items.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">Para confirmar, escriba:</label>
+                            <p className="font-mono text-lg my-2 bg-gray-100 p-2 rounded text-center">
+                                {clearInfo?.confirmationCode || "cargando..."}
+                            </p>
+                            <Input
+                                value={clearConfirmation}
+                                onChange={(e) => setClearConfirmation(e.target.value)}
+                                placeholder="Escriba el código de confirmación"
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => {
+                                    setShowClearModal(false);
+                                    setClearConfirmation("");
+                                }}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                className="flex-1"
+                                onClick={clearHistory}
+                                disabled={clearing || clearConfirmation !== clearInfo?.confirmationCode}
+                            >
+                                {clearing ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                                    <>
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Eliminar Todo
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
