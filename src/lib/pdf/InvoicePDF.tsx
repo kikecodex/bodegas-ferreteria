@@ -66,13 +66,11 @@ const styles = StyleSheet.create({
         width: TICKET_WIDTH,
         color: "#000000"  // Negro puro
     },
-    // Logo centrado arriba con línea debajo
+    // Logo centrado arriba (sin línea para no afectar impresión)
     logoContainer: {
         alignItems: "center",
-        marginBottom: 6,
-        paddingBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: "#000"
+        marginBottom: 2,
+        paddingBottom: 2
     },
     logo: {
         width: 188,  // Ancho casi completo del papel (72mm - padding)

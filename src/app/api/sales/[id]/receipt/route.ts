@@ -74,21 +74,16 @@ export async function GET(
             } : undefined
         };
 
-        // Convertir logo a base64 si existe
+        // Usar logo B/N optimizado para impresoras térmicas
         let logoBase64: string | undefined = undefined;
-        if (sale.tenant?.logo) {
-            try {
-                // El logo está en public/uploads/logos/
-                const logoPath = path.join(process.cwd(), "public", sale.tenant.logo);
-                if (fs.existsSync(logoPath)) {
-                    const logoBuffer = fs.readFileSync(logoPath);
-                    const ext = path.extname(logoPath).toLowerCase();
-                    const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
-                    logoBase64 = `data:${mimeType};base64,${logoBuffer.toString("base64")}`;
-                }
-            } catch (logoError) {
-                console.error("Error leyendo logo:", logoError);
+        const logoPrintPath = path.join(process.cwd(), "public", "uploads", "logos", "logo_print.jpeg");
+        try {
+            if (fs.existsSync(logoPrintPath)) {
+                const logoBuffer = fs.readFileSync(logoPrintPath);
+                logoBase64 = `data:image/jpeg;base64,${logoBuffer.toString("base64")}`;
             }
+        } catch (logoError) {
+            console.error("Error leyendo logo:", logoError);
         }
 
         const companyData = {

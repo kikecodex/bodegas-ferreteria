@@ -188,25 +188,54 @@ export default function HistorialVentasPage() {
         }
     };
 
-    // Imprimir ticket de venta - Impresión directa
-    const printSale = (saleId: string) => {
-        // Crear iframe oculto para imprimir directamente
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = `/api/sales/${saleId}/receipt`;
+    // Imprimir ticket de venta - Impresión DIRECTA sin diálogo
+    const printSale = async (saleId: string) => {
+        try {
+            // Intentar usar servidor local de impresión (impresión 100% silenciosa)
+            try {
+                const pingResponse = await fetch('http://localhost:9100/ping', {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(1000)
+                });
 
-        iframe.onload = () => {
-            // Esperar a que el PDF se cargue y abrir diálogo de impresión
-            setTimeout(() => {
-                iframe.contentWindow?.print();
-                // Remover iframe después de imprimir
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                }, 1000);
-            }, 500);
-        };
+                if (pingResponse.ok) {
+                    const response = await fetch(`/api/sales/${saleId}/receipt`);
+                    if (!response.ok) throw new Error('Error al obtener ticket');
+                    const pdfBlob = await response.blob();
 
-        document.body.appendChild(iframe);
+                    const printResponse = await fetch('http://localhost:9100/print', {
+                        method: 'POST',
+                        body: pdfBlob
+                    });
+
+                    if (printResponse.ok) {
+                        console.log('✓ Ticket enviado a impresora POS-80');
+                        return;
+                    }
+                }
+            } catch (localError) {
+                console.log('Servidor local no disponible, abriendo ventana de impresión');
+            }
+
+            // Fallback: Abrir PDF en ventana popup separada (no encima del sistema)
+            // Esto permite ver, imprimir o descargar el ticket
+            const printUrl = `/api/sales/${saleId}/receipt`;
+            const popup = window.open(
+                printUrl,
+                'ImprimirTicket',
+                'width=450,height=700,left=100,top=100,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
+            );
+
+            if (popup) {
+                popup.focus();
+            } else {
+                // Si el popup fue bloqueado, abrir en nueva pestaña
+                window.open(printUrl, '_blank');
+            }
+        } catch (error) {
+            console.error('Error al imprimir:', error);
+            alert('Error al imprimir el ticket');
+        }
     };
 
     // Obtener info para limpiar historial

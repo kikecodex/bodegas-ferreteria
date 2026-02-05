@@ -150,7 +150,32 @@ export function ReorderAlerts({ onProductClick, compact = false }: ReorderAlerts
     };
 
     if (compact) {
-        // Versión compacta para Dashboard
+        // Versión compacta para Dashboard - Mostrar productos con stock bajo directamente
+        const [lowStockProducts, setLowStockProducts] = useState<Array<{
+            id: string;
+            code: string;
+            name: string;
+            stock: number;
+            minStock: number;
+            unit: string;
+        }>>([]);
+
+        useEffect(() => {
+            // Obtener productos con stock bajo directamente
+            const fetchLowStock = async () => {
+                try {
+                    const res = await fetch('/api/products?filter=low&limit=10');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setLowStockProducts(data.products || []);
+                    }
+                } catch (error) {
+                    console.error('Error fetching low stock:', error);
+                }
+            };
+            fetchLowStock();
+        }, []);
+
         return (
             <Card>
                 <CardHeader className="pb-3">
@@ -162,14 +187,14 @@ export function ReorderAlerts({ onProductClick, compact = false }: ReorderAlerts
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={fetchAlerts}
-                            disabled={loading}
+                            onClick={() => window.location.href = '/inventario?filter=low'}
+                            title="Ver todo en Inventario"
                         >
-                            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                            <Package className="h-4 w-4" />
                         </Button>
                     </CardTitle>
                     <CardDescription>
-                        {counts.PENDING} pendientes · {counts.ORDERED} pedidos
+                        Productos con stock bajo
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -177,38 +202,44 @@ export function ReorderAlerts({ onProductClick, compact = false }: ReorderAlerts
                         <div className="flex justify-center py-4">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
-                    ) : alerts.length === 0 ? (
+                    ) : lowStockProducts.length === 0 ? (
                         <p className="text-center text-muted-foreground py-4">
-                            No hay alertas pendientes 🎉
+                            No hay productos con stock bajo 🎉
                         </p>
                     ) : (
                         <div className="space-y-2">
-                            {alerts.slice(0, 5).map((alert) => (
+                            {lowStockProducts.slice(0, 5).map((product) => (
                                 <div
-                                    key={alert.id}
-                                    className={`p-3 rounded-lg border ${getStatusColor(alert.status)}`}
+                                    key={product.id}
+                                    className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 cursor-pointer hover:bg-amber-500/10 transition-colors"
+                                    onClick={() => onProductClick?.(product.id)}
                                 >
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                {getAlertIcon(alert.type)}
+                                                <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
                                                 <p className="font-medium text-sm truncate">
-                                                    {alert.product.name}
+                                                    {product.name}
                                                 </p>
                                             </div>
                                             <p className="text-xs text-muted-foreground mt-1">
-                                                Stock: {alert.currentStock} / Mín: {alert.minStock}
+                                                Stock: <span className="text-amber-500 font-medium">{product.stock}</span> / Mín: {product.minStock} {product.unit}
                                             </p>
                                         </div>
-                                        {getAlertBadge(alert.type)}
+                                        <Badge className="bg-amber-500 flex-shrink-0">Bajo</Badge>
                                     </div>
                                 </div>
                             ))}
 
-                            {alerts.length > 5 && (
-                                <p className="text-xs text-center text-muted-foreground pt-2">
-                                    +{alerts.length - 5} alertas más
-                                </p>
+                            {lowStockProducts.length > 5 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full text-amber-500"
+                                    onClick={() => window.location.href = '/inventario?filter=low'}
+                                >
+                                    Ver {lowStockProducts.length - 5} productos más →
+                                </Button>
                             )}
                         </div>
                     )}
