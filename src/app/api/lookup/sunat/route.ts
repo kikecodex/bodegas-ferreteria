@@ -42,13 +42,28 @@ export async function GET(request: NextRequest) {
                 found: false,
                 type,
                 number: numberTrimmed,
-                message: "Token no configurado. Configure MIGO_API_TOKEN en .env"
+                message: "Token no configurado. Usando API alternativa..."
             });
         }
 
-        // Consultar Migo API
-        const result = await queryMigoAPI(type, numberTrimmed, token);
-        return result;
+        // Intentar APIs Peru primero (gratuito), luego Migo como fallback
+        const apisPeruResult = await queryAPIsPeru(type, numberTrimmed);
+        if (apisPeruResult) {
+            return apisPeruResult;
+        }
+
+        // Fallback a Migo API si APIs Peru falla
+        if (token) {
+            const migoResult = await queryMigoAPI(type, numberTrimmed, token);
+            return migoResult;
+        }
+
+        return NextResponse.json({
+            found: false,
+            type,
+            number: numberTrimmed,
+            message: "No se pudo consultar el documento"
+        });
 
     } catch (error) {
         console.error("Error in SUNAT/RENIEC lookup:", error);
@@ -59,7 +74,76 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// Consultar Migo.pe API
+// Consultar APIs Peru (v1 con token)
+async function queryAPIsPeru(type: string, number: string) {
+    try {
+        const token = process.env.APIS_NET_PE_TOKEN;
+
+        if (!token) {
+            console.log("APIS_NET_PE_TOKEN not configured");
+            return null;
+        }
+
+        // APIs Peru v1 - endpoint correcto
+        const apiUrl = type === "ruc"
+            ? `https://api.apis.net.pe/v1/ruc?numero=${number}`
+            : `https://api.apis.net.pe/v1/dni?numero=${number}`;
+
+        const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+        console.log("APIs Peru response:", JSON.stringify(data));
+
+        if (!response.ok || data.message) {
+            console.log("APIs Peru failed:", data.message || response.status);
+            return null;
+        }
+
+        if (type === "ruc") {
+            return NextResponse.json({
+                found: true,
+                type: "ruc",
+                number: data.numeroDocumento || number,
+                name: data.nombre || data.razonSocial || "",
+                address: data.direccion || "",
+                status: data.estado || "",
+                condition: data.condicion || "",
+                location: {
+                    department: data.departamento || "",
+                    province: data.provincia || "",
+                    district: data.distrito || ""
+                }
+            });
+        } else {
+            // DNI
+            const fullName = data.nombreCompleto || data.nombre || [
+                data.nombres,
+                data.apellidoPaterno,
+                data.apellidoMaterno
+            ].filter(Boolean).join(" ");
+
+            return NextResponse.json({
+                found: true,
+                type: "dni",
+                number: data.numeroDocumento || number,
+                name: fullName,
+                firstName: data.nombres || "",
+                lastName: `${data.apellidoPaterno || ""} ${data.apellidoMaterno || ""}`.trim()
+            });
+        }
+    } catch (error) {
+        console.error("APIs Peru error:", error);
+        return null;
+    }
+}
+
+// Consultar Migo.pe API (fallback)
 async function queryMigoAPI(type: string, number: string, token: string) {
     try {
         const apiUrl = type === "ruc"
@@ -133,3 +217,4 @@ async function queryMigoAPI(type: string, number: string, token: string) {
         });
     }
 }
+

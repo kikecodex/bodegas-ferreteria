@@ -52,7 +52,8 @@ export async function GET(
                         ruc: true,
                         address: true,
                         phone: true,
-                        email: true
+                        email: true,
+                        logo: true
                     }
                 }
             }
@@ -66,12 +67,33 @@ export async function GET(
         }
 
         // Información de la empresa desde el tenant
+        // Obtener logo como base64 data URI para @react-pdf
+        let logoDataUri: string | undefined = undefined;
+        const path = await import('path');
+        const fs = await import('fs');
+
+        // Usar logo B/N subido por el cliente para impresoras térmicas
+        const logoRelativePath = '/uploads/logos/logo_print.jpeg';
+        const logoAbsolutePath = path.join(process.cwd(), 'public', logoRelativePath);
+
+        if (fs.existsSync(logoAbsolutePath)) {
+            const logoBuffer = fs.readFileSync(logoAbsolutePath);
+            const base64 = logoBuffer.toString('base64');
+            const ext = path.extname(logoAbsolutePath).toLowerCase();
+            const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+            logoDataUri = `data:${mimeType};base64,${base64}`;
+            console.log(`Logo cargado: ${logoAbsolutePath}, tamaño: ${logoBuffer.length} bytes`);
+        } else {
+            console.log(`Logo NO encontrado: ${logoAbsolutePath}`);
+        }
+
         const COMPANY_INFO = {
-            name: sale.tenant?.name || tenant.tenantName,
-            ruc: sale.tenant?.ruc || "20XXXXXXXXX",
-            address: sale.tenant?.address || "Sin dirección",
-            phone: sale.tenant?.phone || "",
-            email: sale.tenant?.email || ""
+            name: sale.tenant?.name || "CORPORACION OROPEZA'S",
+            ruc: sale.tenant?.ruc || "10712870058",
+            address: sale.tenant?.address || "CAL. MARIAN S/N - MARIAN-INDEP-HUARAZ",
+            phone: sale.tenant?.phone || "938408777",
+            email: sale.tenant?.email || "",
+            logo: logoDataUri
         };
 
         // Preparar datos para el PDF
@@ -107,7 +129,12 @@ export async function GET(
         );
 
         // Nombre del archivo
-        const docType = sale.documentType === "FACTURA" ? "Factura" : "Boleta";
+        const docTypeNames: Record<string, string> = {
+            "FACTURA": "Factura",
+            "NOTA_VENTA": "NotaVenta",
+            "BOLETA": "Boleta"
+        };
+        const docType = docTypeNames[sale.documentType] || "Boleta";
         const fileName = `${docType}_${sale.number}.pdf`;
 
         // Retornar PDF (convertir Buffer a Uint8Array)

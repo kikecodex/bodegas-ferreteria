@@ -8,6 +8,7 @@ const publicPaths = [
     "/api/auth/login",
     "/api/auth/logout",
     "/api/auth/register", // API de registro
+    "/api/lookup",    // Consulta SUNAT/RENIEC
     "/api/seed",       // Para desarrollo
     "/api/seed-superadmin",
     "/api/seed-bodega",

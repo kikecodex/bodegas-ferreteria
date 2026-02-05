@@ -69,7 +69,7 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Consultar SUNAT por RUC/DNI
+    // Consultar SUNAT por RUC/DNI o permitir ingreso manual
     const lookupDocument = async () => {
         if (!search.trim()) return;
 
@@ -94,10 +94,33 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
                         name: data.name || "",
                         address: data.address || ""
                     });
+                } else {
+                    // No se encontró en SUNAT, permitir ingreso manual
+                    setNewClient({
+                        documentType: isRUC ? "RUC" : "DNI",
+                        document: search,
+                        name: "",
+                        address: ""
+                    });
                 }
+            } else {
+                // Error de API, permitir ingreso manual
+                setNewClient({
+                    documentType: isRUC ? "RUC" : "DNI",
+                    document: search,
+                    name: "",
+                    address: ""
+                });
             }
         } catch (error) {
             console.error("Error consultando documento:", error);
+            // Error de conexión, permitir ingreso manual
+            setNewClient({
+                documentType: isRUC ? "RUC" : "DNI",
+                document: search,
+                name: "",
+                address: ""
+            });
         } finally {
             setLookingUp(false);
         }
@@ -236,8 +259,17 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
                     {newClient && (
                         <div className="border rounded-lg p-4 space-y-3 bg-muted/50">
                             <h4 className="font-medium flex items-center gap-2">
-                                <Check className="h-4 w-4 text-green-500" />
-                                Datos encontrados
+                                {newClient.name ? (
+                                    <>
+                                        <Check className="h-4 w-4 text-green-500" />
+                                        Datos encontrados
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="h-4 w-4 text-blue-500" />
+                                        Ingreso manual de cliente
+                                    </>
+                                )}
                             </h4>
 
                             <div className="space-y-2">

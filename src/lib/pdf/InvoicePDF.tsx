@@ -1,8 +1,11 @@
+// PDF Component for Invoice Generation (Server-side)
+
 import {
     Document,
     Page,
     Text,
     View,
+    Image,
     StyleSheet
 } from "@react-pdf/renderer";
 
@@ -43,6 +46,7 @@ interface CompanyInfo {
     address: string;
     phone: string;
     email?: string;
+    logo?: string;
 }
 
 interface InvoicePDFProps {
@@ -50,174 +54,165 @@ interface InvoicePDFProps {
     company: CompanyInfo;
 }
 
-// Estilos
+// Formato ticket POS: 72.1mm x 297mm (aprox 204.3 x 841.8 puntos)
+const TICKET_WIDTH = 204.3;
+
+// Estilos basados en el modelo de boleta Oropeza
 const styles = StyleSheet.create({
     page: {
-        padding: 40,
-        fontSize: 10,
-        fontFamily: "Helvetica"
+        padding: 8,
+        fontSize: 7,
+        fontFamily: "Helvetica",
+        width: TICKET_WIDTH
     },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 20,
-        paddingBottom: 15,
-        borderBottomWidth: 2,
-        borderBottomColor: "#dc2626"
+    // Logo centrado arriba con línea debajo
+    logoContainer: {
+        alignItems: "center",
+        marginBottom: 6,
+        paddingBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: "#000"
     },
+    logo: {
+        width: 188,  // Ancho casi completo del papel (72mm - padding)
+        height: "auto",
+        marginBottom: 4
+    },
+    // Datos de empresa
     companySection: {
-        flex: 1
+        alignItems: "center",
+        marginBottom: 6,
+        paddingBottom: 4,
+        borderBottomWidth: 1,
+        borderBottomColor: "#000"
     },
     companyName: {
-        fontSize: 18,
+        fontSize: 8,
         fontWeight: "bold",
-        color: "#dc2626",
-        marginBottom: 4
-    },
-    companyInfo: {
-        fontSize: 9,
-        color: "#666",
+        textAlign: "center",
         marginBottom: 2
     },
-    documentBox: {
-        padding: 12,
-        borderWidth: 2,
-        borderColor: "#dc2626",
-        borderRadius: 4,
+    companyInfo: {
+        fontSize: 6,
+        textAlign: "center",
+        marginBottom: 1
+    },
+    // Tipo de documento
+    documentSection: {
         alignItems: "center",
-        width: 160
+        marginBottom: 6,
+        paddingVertical: 4
     },
     documentType: {
-        fontSize: 14,
+        fontSize: 8,
         fontWeight: "bold",
-        color: "#dc2626",
-        marginBottom: 4
+        textAlign: "center",
+        marginBottom: 2
     },
     documentNumber: {
-        fontSize: 12,
+        fontSize: 8,
         fontWeight: "bold"
     },
-    documentDate: {
-        fontSize: 9,
-        color: "#666",
-        marginTop: 4
+    // Fechas
+    infoSection: {
+        marginBottom: 6,
+        fontSize: 6
     },
-    clientSection: {
-        marginBottom: 20,
-        padding: 12,
-        backgroundColor: "#f9fafb",
-        borderRadius: 4
-    },
-    clientTitle: {
-        fontSize: 10,
-        fontWeight: "bold",
-        marginBottom: 8,
-        color: "#374151"
-    },
-    clientRow: {
+    infoRow: {
         flexDirection: "row",
-        marginBottom: 4
+        marginBottom: 1
     },
-    clientLabel: {
-        width: 80,
-        fontWeight: "bold",
-        color: "#6b7280"
+    infoLabel: {
+        width: 60
     },
-    clientValue: {
+    infoValue: {
         flex: 1
     },
-    table: {
-        marginBottom: 20
+    // Separador
+    separator: {
+        borderBottomWidth: 1,
+        borderBottomStyle: "dashed",
+        borderBottomColor: "#000",
+        marginVertical: 4
     },
+    // Tabla de items
     tableHeader: {
         flexDirection: "row",
-        backgroundColor: "#dc2626",
-        color: "#fff",
-        padding: 8,
-        fontWeight: "bold"
+        borderBottomWidth: 1,
+        borderBottomColor: "#000",
+        paddingBottom: 2,
+        marginBottom: 4,
+        fontWeight: "bold",
+        fontSize: 6
     },
+    colCant: { width: 25, textAlign: "center" },
+    colProducto: { flex: 1 },
+    colPrecio: { width: 35, textAlign: "right" },
+    colTotal: { width: 35, textAlign: "right" },
     tableRow: {
         flexDirection: "row",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e5e7eb",
-        padding: 8
+        marginBottom: 2,
+        fontSize: 6
     },
-    tableRowAlt: {
-        backgroundColor: "#f9fafb"
-    },
-    colItem: { flex: 3 },
-    colQty: { width: 50, textAlign: "center" },
-    colPrice: { width: 70, textAlign: "right" },
-    colSubtotal: { width: 80, textAlign: "right" },
+    // Totales estilo Oropeza
     totalsSection: {
-        alignItems: "flex-end",
-        marginBottom: 20
-    },
-    totalsBox: {
-        width: 220,
-        padding: 12,
-        backgroundColor: "#f9fafb",
-        borderRadius: 4
+        marginTop: 6,
+        borderTopWidth: 1,
+        borderTopStyle: "dashed",
+        borderTopColor: "#000",
+        paddingTop: 4
     },
     totalsRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 4
+        justifyContent: "flex-end",
+        marginBottom: 1,
+        fontSize: 6
     },
     totalsLabel: {
-        color: "#6b7280"
+        width: 60,
+        textAlign: "right",
+        marginRight: 8
     },
     totalsValue: {
-        fontWeight: "bold"
+        width: 45,
+        textAlign: "right"
     },
-    totalFinal: {
+    totalFinalRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 8,
-        paddingTop: 8,
-        borderTopWidth: 2,
-        borderTopColor: "#dc2626"
-    },
-    totalLabel: {
-        fontSize: 14,
-        fontWeight: "bold"
-    },
-    totalValue: {
-        fontSize: 14,
-        fontWeight: "bold",
-        color: "#dc2626"
-    },
-    footer: {
-        position: "absolute",
-        bottom: 30,
-        left: 40,
-        right: 40,
-        textAlign: "center",
-        fontSize: 8,
-        color: "#9ca3af",
+        justifyContent: "flex-end",
+        marginTop: 2,
+        paddingTop: 2,
         borderTopWidth: 1,
-        borderTopColor: "#e5e7eb",
-        paddingTop: 10
+        borderTopColor: "#000"
     },
-    paymentMethod: {
-        marginTop: 10,
-        padding: 8,
-        backgroundColor: "#dcfce7",
-        borderRadius: 4,
-        textAlign: "center"
-    },
-    paymentText: {
-        color: "#166534",
+    totalFinalLabel: {
+        width: 60,
+        textAlign: "right",
+        marginRight: 8,
+        fontSize: 8,
         fontWeight: "bold"
+    },
+    totalFinalValue: {
+        width: 45,
+        textAlign: "right",
+        fontSize: 8,
+        fontWeight: "bold"
+    },
+    // Footer
+    footer: {
+        marginTop: 10,
+        alignItems: "center"
+    },
+    thanksText: {
+        fontSize: 7,
+        fontWeight: "bold",
+        textAlign: "center"
     }
 });
 
-// Función para formatear moneda
-const formatCurrency = (amount: number): string => {
-    return `S/ ${amount.toFixed(2)}`;
-};
+// Formateo
+const formatCurrency = (amount: number): string => amount.toFixed(2);
 
-// Función para formatear fecha
 const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("es-PE", {
@@ -227,150 +222,141 @@ const formatDate = (dateStr: string): string => {
     });
 };
 
-// Componente PDF
-export function InvoicePDF({ sale, company }: InvoicePDFProps) {
-    const isFactura = sale.documentType === "FACTURA";
+const formatDateTime = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("es-PE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    }) + " " + date.toLocaleTimeString("es-PE", {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+};
 
+// Obtener nombre del tipo de documento
+const getDocumentTypeName = (type: string): string => {
+    switch (type) {
+        case "FACTURA":
+            return "FACTURA ELECTRONICA";
+        case "NOTA_VENTA":
+            return "NOTA DE VENTA";
+        case "BOLETA":
+        default:
+            return "BOLETA DE VENTA ELECTRONICA";
+    }
+};
+
+// Componente PDF Ticket - Modelo Oropeza
+export function InvoicePDF({ sale, company }: InvoicePDFProps) {
     return (
         <Document>
-            <Page size="A4" style={styles.page}>
-                {/* Cabecera */}
-                <View style={styles.header}>
-                    <View style={styles.companySection}>
-                        <Text style={styles.companyName}>{company.name}</Text>
-                        <Text style={styles.companyInfo}>RUC: {company.ruc}</Text>
-                        <Text style={styles.companyInfo}>{company.address}</Text>
-                        <Text style={styles.companyInfo}>Tel: {company.phone}</Text>
-                        {company.email && (
-                            <Text style={styles.companyInfo}>{company.email}</Text>
-                        )}
+            <Page size={[TICKET_WIDTH, 700]} style={styles.page}>
+                {/* Logo B/N para impresoras térmicas */}
+                {company.logo && (
+                    <View style={styles.logoContainer}>
+                        <Image src={company.logo} style={styles.logo} />
                     </View>
-                    <View style={styles.documentBox}>
-                        <Text style={styles.documentType}>
-                            {isFactura ? "FACTURA ELECTRÓNICA" : "BOLETA DE VENTA"}
-                        </Text>
-                        <Text style={styles.documentNumber}>
-                            {sale.documentNumber || sale.number}
-                        </Text>
-                        <Text style={styles.documentDate}>
-                            Fecha: {formatDate(sale.createdAt)}
-                        </Text>
-                    </View>
+                )}
+
+                {/* Datos de empresa */}
+                <View style={styles.companySection}>
+                    <Text style={styles.companyName}>CORPORACIÓN OROPEZA'S</Text>
+                    <Text style={styles.companyInfo}>RUC: 10712870058</Text>
+                    <Text style={styles.companyInfo}>YANAC LOPEZ CHRISTIAN FRANKLIN</Text>
+                    <Text style={styles.companyInfo}>Dirección: Calle Marian s/n Independencia-Huaraz</Text>
+                    <Text style={styles.companyInfo}>Cel: 938408777</Text>
                 </View>
 
-                {/* Datos del Cliente */}
-                <View style={styles.clientSection}>
-                    <Text style={styles.clientTitle}>DATOS DEL CLIENTE</Text>
-                    {sale.client ? (
+                {/* Tipo y Número de Documento */}
+                <View style={styles.documentSection}>
+                    <Text style={styles.documentType}>
+                        {getDocumentTypeName(sale.documentType)}
+                    </Text>
+                    <Text style={styles.documentNumber}>
+                        {sale.documentNumber || sale.number}
+                    </Text>
+                </View>
+
+                {/* Fechas e info (como en el modelo) */}
+                <View style={styles.infoSection}>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>F.EMISION:</Text>
+                        <Text style={styles.infoValue}>{formatDate(sale.createdAt)}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>FORMA PAGO:</Text>
+                        <Text style={styles.infoValue}>{sale.paymentMethod}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>F.IMPRESION:</Text>
+                        <Text style={styles.infoValue}>{formatDateTime(sale.createdAt)}</Text>
+                    </View>
+                    {sale.client && (
                         <>
-                            <View style={styles.clientRow}>
-                                <Text style={styles.clientLabel}>
-                                    {sale.client.documentType}:
-                                </Text>
-                                <Text style={styles.clientValue}>
-                                    {sale.client.document}
-                                </Text>
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>{sale.client.documentType}:</Text>
+                                <Text style={styles.infoValue}>{sale.client.document}</Text>
                             </View>
-                            <View style={styles.clientRow}>
-                                <Text style={styles.clientLabel}>
-                                    {isFactura ? "Razón Social:" : "Nombre:"}
-                                </Text>
-                                <Text style={styles.clientValue}>{sale.client.name}</Text>
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>CLIENTE:</Text>
+                                <Text style={styles.infoValue}>{sale.client.name}</Text>
                             </View>
-                            {sale.client.address && (
-                                <View style={styles.clientRow}>
-                                    <Text style={styles.clientLabel}>Dirección:</Text>
-                                    <Text style={styles.clientValue}>
-                                        {sale.client.address}
-                                    </Text>
-                                </View>
-                            )}
                         </>
-                    ) : (
-                        <Text style={styles.clientValue}>CLIENTE VARIOS</Text>
                     )}
                 </View>
 
-                {/* Tabla de Items */}
-                <View style={styles.table}>
-                    <View style={styles.tableHeader}>
-                        <Text style={styles.colItem}>DESCRIPCIÓN</Text>
-                        <Text style={styles.colQty}>CANT.</Text>
-                        <Text style={styles.colPrice}>P. UNIT.</Text>
-                        <Text style={styles.colSubtotal}>SUBTOTAL</Text>
-                    </View>
-                    {sale.items.map((item, index) => (
-                        <View
-                            key={index}
-                            style={index % 2 === 1 ? { ...styles.tableRow, ...styles.tableRowAlt } : styles.tableRow}
-                        >
-                            <View style={styles.colItem}>
-                                <Text>{item.productName}</Text>
-                                <Text style={{ fontSize: 8, color: "#6b7280" }}>
-                                    Código: {item.productCode}
-                                </Text>
-                            </View>
-                            <Text style={styles.colQty}>{item.quantity}</Text>
-                            <Text style={styles.colPrice}>
-                                {formatCurrency(item.unitPrice)}
-                            </Text>
-                            <Text style={styles.colSubtotal}>
-                                {formatCurrency(item.subtotal)}
-                            </Text>
-                        </View>
-                    ))}
+                <View style={styles.separator} />
+
+                {/* Encabezado de tabla */}
+                <View style={styles.tableHeader}>
+                    <Text style={styles.colCant}>CANT</Text>
+                    <Text style={styles.colProducto}>PRODUCTO</Text>
+                    <Text style={styles.colPrecio}>PRECIO</Text>
+                    <Text style={styles.colTotal}>TOTAL</Text>
                 </View>
 
-                {/* Totales */}
+                {/* Items */}
+                {sale.items.map((item, index) => (
+                    <View key={index} style={styles.tableRow}>
+                        <Text style={styles.colCant}>{item.quantity}</Text>
+                        <Text style={styles.colProducto}>{item.productName}</Text>
+                        <Text style={styles.colPrecio}>{formatCurrency(item.unitPrice)}</Text>
+                        <Text style={styles.colTotal}>{formatCurrency(item.subtotal)}</Text>
+                    </View>
+                ))}
+
+                <View style={styles.separator} />
+
+                {/* Totales (estilo Oropeza) */}
                 <View style={styles.totalsSection}>
-                    <View style={styles.totalsBox}>
+                    {sale.discount > 0 && (
                         <View style={styles.totalsRow}>
-                            <Text style={styles.totalsLabel}>Subtotal:</Text>
-                            <Text style={styles.totalsValue}>
-                                {formatCurrency(sale.subtotal)}
-                            </Text>
+                            <Text style={styles.totalsLabel}>DESCUENTO:</Text>
+                            <Text style={styles.totalsValue}>S/. {formatCurrency(sale.discount)}</Text>
                         </View>
-                        {sale.discount > 0 && (
-                            <View style={styles.totalsRow}>
-                                <Text style={styles.totalsLabel}>Descuento:</Text>
-                                <Text style={styles.totalsValue}>
-                                    -{formatCurrency(sale.discount)}
-                                </Text>
-                            </View>
-                        )}
-                        <View style={styles.totalsRow}>
-                            <Text style={styles.totalsLabel}>IGV (18%):</Text>
-                            <Text style={styles.totalsValue}>
-                                {formatCurrency(sale.tax)}
-                            </Text>
-                        </View>
-                        <View style={styles.totalFinal}>
-                            <Text style={styles.totalLabel}>TOTAL:</Text>
-                            <Text style={styles.totalValue}>
-                                {formatCurrency(sale.total)}
-                            </Text>
-                        </View>
+                    )}
+                    <View style={styles.totalsRow}>
+                        <Text style={styles.totalsLabel}>SUBTOTAL:</Text>
+                        <Text style={styles.totalsValue}>S/. {formatCurrency(sale.subtotal)}</Text>
                     </View>
-                </View>
-
-                {/* Método de Pago */}
-                <View style={styles.paymentMethod}>
-                    <Text style={styles.paymentText}>
-                        Pagado con: {sale.paymentMethod}
-                    </Text>
+                    <View style={styles.totalsRow}>
+                        <Text style={styles.totalsLabel}>IGV:</Text>
+                        <Text style={styles.totalsValue}>S/. {formatCurrency(sale.tax)}</Text>
+                    </View>
+                    <View style={styles.totalsRow}>
+                        <Text style={styles.totalsLabel}>ICBPER:</Text>
+                        <Text style={styles.totalsValue}>S/. 0.00</Text>
+                    </View>
+                    <View style={styles.totalFinalRow}>
+                        <Text style={styles.totalFinalLabel}>TOTAL:</Text>
+                        <Text style={styles.totalFinalValue}>S/. {formatCurrency(sale.total)}</Text>
+                    </View>
                 </View>
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text>
-                        Representación impresa del comprobante electrónico.
-                    </Text>
-                    <Text style={{ marginTop: 4 }}>
-                        Autorizado mediante Resolución de SUNAT. Consulte en www.sunat.gob.pe
-                    </Text>
-                    <Text style={{ marginTop: 4, fontWeight: "bold" }}>
-                        ¡Gracias por su preferencia!
-                    </Text>
+                    <Text style={styles.thanksText}>Gracias por su preferencia</Text>
                 </View>
             </Page>
         </Document>

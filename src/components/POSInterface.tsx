@@ -408,7 +408,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
     return (
         <div className="flex h-[calc(100vh-120px)] gap-4">
             {/* Panel izquierdo - Búsqueda, resultados y totales */}
-            <div className="w-1/2 flex flex-col gap-3">
+            <div className="w-2/5 flex flex-col gap-3">
                 {/* Barra de búsqueda - más compacta */}
                 <Card>
                     <CardContent className="p-3">
@@ -510,7 +510,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
             </div>
 
             {/* Panel derecho - Solo Carrito con productos */}
-            <div className="w-1/2 flex flex-col">
+            <div className="w-3/5 flex flex-col">
                 <Card className="flex-1 overflow-hidden flex flex-col">
                     <CardHeader className="py-2 px-4 flex-shrink-0">
                         <CardTitle className="flex items-center justify-between text-base">
@@ -636,24 +636,24 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
             {/* Modal de Pago */}
             {showPayment && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <Card className="w-[500px] max-h-[90vh] overflow-y-auto">
-                        <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
+                    <Card className="w-[420px]">
+                        <CardHeader className="py-2 px-4">
+                            <CardTitle className="flex items-center justify-between text-base">
                                 <span>Procesar Pago</span>
-                                <Button variant="ghost" size="icon" onClick={() => setShowPayment(false)}>
-                                    <X className="h-5 w-5" />
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPayment(false)}>
+                                    <X className="h-4 w-4" />
                                 </Button>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-3 px-4 pb-4">
                             {/* Total */}
-                            <div className="text-center py-4 bg-primary/10 rounded-lg">
-                                <p className="text-sm text-muted-foreground">Total a Pagar</p>
-                                <p className="text-4xl font-bold">S/ {total.toFixed(2)}</p>
+                            <div className="text-center py-2 bg-primary/10 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Total a Pagar</p>
+                                <p className="text-3xl font-bold">S/ {total.toFixed(2)}</p>
                             </div>
 
                             {/* Tipo de comprobante */}
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <Button
                                     variant={documentType === "BOLETA" ? "default" : "outline"}
                                     onClick={() => {
@@ -669,43 +669,50 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                 >
                                     Factura
                                 </Button>
+                                <Button
+                                    variant={documentType === "NOTA_VENTA" ? "default" : "outline"}
+                                    onClick={() => {
+                                        setDocumentType("NOTA_VENTA");
+                                        setSelectedClient(null);
+                                    }}
+                                >
+                                    Nota Venta
+                                </Button>
                             </div>
 
-                            {/* Cliente (obligatorio para Factura) */}
-                            {documentType === "FACTURA" && (
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium flex items-center gap-2">
-                                        <Building2 className="h-4 w-4" />
-                                        Cliente <span className="text-red-500">*</span>
-                                    </p>
-                                    {selectedClient ? (
-                                        <div className="p-3 bg-muted rounded-lg flex items-center justify-between">
-                                            <div>
-                                                <p className="font-medium">{selectedClient.name}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {selectedClient.documentType}: {selectedClient.document}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setShowClientSelector(true)}
-                                            >
-                                                Cambiar
-                                            </Button>
+                            {/* Cliente (obligatorio para Factura, opcional para resto) */}
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium flex items-center gap-2">
+                                    <Building2 className="h-4 w-4" />
+                                    Cliente {documentType === "FACTURA" && <span className="text-red-500">*</span>}
+                                </p>
+                                {selectedClient ? (
+                                    <div className="p-3 bg-muted rounded-lg flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">{selectedClient.name}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {selectedClient.documentType}: {selectedClient.document}
+                                            </p>
                                         </div>
-                                    ) : (
                                         <Button
-                                            variant="outline"
-                                            className="w-full"
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={() => setShowClientSelector(true)}
                                         >
-                                            <Building2 className="h-4 w-4 mr-2" />
-                                            Seleccionar Cliente
+                                            Cambiar
                                         </Button>
-                                    )}
-                                </div>
-                            )}
+                                    </div>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                        onClick={() => setShowClientSelector(true)}
+                                    >
+                                        <Building2 className="h-4 w-4 mr-2" />
+                                        Seleccionar Cliente
+                                    </Button>
+                                )}
+                            </div>
 
                             {/* Métodos de pago */}
                             <div className="space-y-2">
@@ -749,9 +756,9 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                         }}
                                     />
                                     {parseFloat(amountPaid) >= total && (
-                                        <div className="text-center py-3 bg-green-500/10 rounded-lg">
-                                            <p className="text-sm text-muted-foreground">Vuelto</p>
-                                            <p className="text-2xl font-bold text-green-600">
+                                        <div className="text-center py-2 bg-green-500/10 rounded-lg">
+                                            <p className="text-xs text-muted-foreground">Vuelto</p>
+                                            <p className="text-xl font-bold text-green-600">
                                                 S/ {change.toFixed(2)}
                                             </p>
                                         </div>
@@ -761,14 +768,14 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
 
                             {/* Botón confirmar */}
                             <Button
-                                className="w-full h-14 text-lg"
+                                className="w-full h-10"
                                 onClick={processSale}
                                 disabled={processing || (paymentMethod === "EFECTIVO" && parseFloat(amountPaid || "0") < total)}
                             >
                                 {processing ? (
-                                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                 ) : (
-                                    <Receipt className="h-5 w-5 mr-2" />
+                                    <Receipt className="h-4 w-4 mr-2" />
                                 )}
                                 CONFIRMAR VENTA
                             </Button>
