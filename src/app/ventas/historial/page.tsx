@@ -188,9 +188,25 @@ export default function HistorialVentasPage() {
         }
     };
 
-    // Imprimir ticket de venta
+    // Imprimir ticket de venta - Impresión directa
     const printSale = (saleId: string) => {
-        window.open(`/api/sales/${saleId}/receipt`, "_blank");
+        // Crear iframe oculto para imprimir directamente
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = `/api/sales/${saleId}/receipt`;
+
+        iframe.onload = () => {
+            // Esperar a que el PDF se cargue y abrir diálogo de impresión
+            setTimeout(() => {
+                iframe.contentWindow?.print();
+                // Remover iframe después de imprimir
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
+            }, 500);
+        };
+
+        document.body.appendChild(iframe);
     };
 
     // Obtener info para limpiar historial

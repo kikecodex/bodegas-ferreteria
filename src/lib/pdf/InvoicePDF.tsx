@@ -57,13 +57,14 @@ interface InvoicePDFProps {
 // Formato ticket POS: 72.1mm x 297mm (aprox 204.3 x 841.8 puntos)
 const TICKET_WIDTH = 204.3;
 
-// Estilos basados en el modelo de boleta Oropeza
+// Estilos OPTIMIZADOS para impresora térmica POS-80
 const styles = StyleSheet.create({
     page: {
         padding: 8,
-        fontSize: 7,
-        fontFamily: "Helvetica",
-        width: TICKET_WIDTH
+        fontSize: 9,  // Aumentado de 7 a 9
+        fontFamily: "Helvetica-Bold",  // Bold para mejor legibilidad
+        width: TICKET_WIDTH,
+        color: "#000000"  // Negro puro
     },
     // Logo centrado arriba con línea debajo
     logoContainer: {
@@ -87,13 +88,13 @@ const styles = StyleSheet.create({
         borderBottomColor: "#000"
     },
     companyName: {
-        fontSize: 8,
+        fontSize: 10,  // Aumentado de 8 a 10
         fontWeight: "bold",
         textAlign: "center",
         marginBottom: 2
     },
     companyInfo: {
-        fontSize: 6,
+        fontSize: 8,  // Aumentado de 6 a 8
         textAlign: "center",
         marginBottom: 1
     },
@@ -104,19 +105,19 @@ const styles = StyleSheet.create({
         paddingVertical: 4
     },
     documentType: {
-        fontSize: 8,
+        fontSize: 10,  // Aumentado de 8 a 10
         fontWeight: "bold",
         textAlign: "center",
         marginBottom: 2
     },
     documentNumber: {
-        fontSize: 8,
+        fontSize: 10,  // Aumentado de 8 a 10
         fontWeight: "bold"
     },
     // Fechas
     infoSection: {
         marginBottom: 6,
-        fontSize: 6
+        fontSize: 8  // Aumentado de 6 a 8
     },
     infoRow: {
         flexDirection: "row",
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
         paddingBottom: 2,
         marginBottom: 4,
         fontWeight: "bold",
-        fontSize: 6
+        fontSize: 8  // Aumentado de 6 a 8
     },
     colCant: { width: 25, textAlign: "center" },
     colProducto: { flex: 1 },
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     tableRow: {
         flexDirection: "row",
         marginBottom: 2,
-        fontSize: 6
+        fontSize: 8  // Aumentado de 6 a 8
     },
     // Totales estilo Oropeza
     totalsSection: {
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-end",
         marginBottom: 1,
-        fontSize: 6
+        fontSize: 8  // Aumentado de 6 a 8
     },
     totalsLabel: {
         width: 60,
@@ -189,13 +190,13 @@ const styles = StyleSheet.create({
         width: 60,
         textAlign: "right",
         marginRight: 8,
-        fontSize: 8,
+        fontSize: 10,  // Aumentado de 8 a 10
         fontWeight: "bold"
     },
     totalFinalValue: {
         width: 45,
         textAlign: "right",
-        fontSize: 8,
+        fontSize: 10,  // Aumentado de 8 a 10
         fontWeight: "bold"
     },
     // Footer
@@ -204,7 +205,7 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
     thanksText: {
-        fontSize: 7,
+        fontSize: 9,  // Aumentado de 7 a 9
         fontWeight: "bold",
         textAlign: "center"
     }

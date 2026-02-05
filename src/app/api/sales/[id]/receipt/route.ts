@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getTenantFromSession } from "@/lib/tenant-context";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/lib/pdf/InvoicePDF";
+import * as fs from "fs";
+import * as path from "path";
 
 // GET /api/sales/[id]/receipt - Genera el PDF del ticket de venta
 export async function GET(
@@ -72,13 +74,30 @@ export async function GET(
             } : undefined
         };
 
+        // Convertir logo a base64 si existe
+        let logoBase64: string | undefined = undefined;
+        if (sale.tenant?.logo) {
+            try {
+                // El logo está en public/uploads/logos/
+                const logoPath = path.join(process.cwd(), "public", sale.tenant.logo);
+                if (fs.existsSync(logoPath)) {
+                    const logoBuffer = fs.readFileSync(logoPath);
+                    const ext = path.extname(logoPath).toLowerCase();
+                    const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
+                    logoBase64 = `data:${mimeType};base64,${logoBuffer.toString("base64")}`;
+                }
+            } catch (logoError) {
+                console.error("Error leyendo logo:", logoError);
+            }
+        }
+
         const companyData = {
             name: sale.tenant?.name || "CORPORACIÓN OROPEZA'S",
             ruc: sale.tenant?.ruc || "10712870058",
             address: sale.tenant?.address || "Calle Marian s/n Independencia-Huaraz",
             phone: sale.tenant?.phone || "938408777",
             email: sale.tenant?.email || undefined,
-            logo: sale.tenant?.logo || undefined
+            logo: logoBase64
         };
 
         // Generar PDF
@@ -86,11 +105,14 @@ export async function GET(
             InvoicePDF({ sale: saleData, company: companyData })
         );
 
-        // Retornar como PDF - Convertir Buffer a Uint8Array
+        // Retornar como PDF con headers para impresión directa
         return new NextResponse(new Uint8Array(pdfBuffer), {
             headers: {
                 "Content-Type": "application/pdf",
-                "Content-Disposition": `inline; filename="ticket-${sale.number}.pdf"`
+                "Content-Disposition": `inline; filename="ticket-${sale.number}.pdf"`,
+                // Headers adicionales para mejorar la experiencia
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache"
             }
         });
 
