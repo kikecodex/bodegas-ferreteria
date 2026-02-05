@@ -238,94 +238,138 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
                         </div>
                     )}
 
-                    {/* Opción crear nuevo */}
+                    {/* Opción crear nuevo - visible cuando hay documentos válidos */}
                     {search.length >= 8 && results.length === 0 && !newClient && (
                         <Button
                             variant="outline"
-                            className="w-full mb-4"
+                            className="w-full mb-4 border-blue-200 text-blue-600 hover:bg-blue-50"
                             onClick={lookupDocument}
                             disabled={lookingUp}
                         >
                             {lookingUp ? (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             ) : (
-                                <Plus className="h-4 w-4 mr-2" />
+                                <Search className="h-4 w-4 mr-2" />
                             )}
                             Consultar {search.length === 11 ? "RUC" : "DNI"} en SUNAT
                         </Button>
                     )}
 
+                    {/* Botón crear manualmente - siempre visible cuando no hay resultados */}
+                    {search.length >= 3 && results.length === 0 && !newClient && !loading && (
+                        <Button
+                            variant="outline"
+                            className="w-full mb-4 border-green-200 text-green-600 hover:bg-green-50"
+                            onClick={() => setNewClient({
+                                documentType: search.length === 11 ? "RUC" : "DNI",
+                                document: search.length >= 8 && search.length <= 11 && /^\d+$/.test(search) ? search : "",
+                                name: /^\d+$/.test(search) ? "" : search, // Si no es número, usar como nombre
+                                address: ""
+                            })}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Agregar Nuevo Cliente
+                        </Button>
+                    )}
+
                     {/* Formulario nuevo cliente */}
                     {newClient && (
-                        <div className="border rounded-lg p-4 space-y-3 bg-muted/50">
-                            <h4 className="font-medium flex items-center gap-2">
-                                {newClient.name ? (
-                                    <>
-                                        <Check className="h-4 w-4 text-green-500" />
-                                        Datos encontrados
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="h-4 w-4 text-blue-500" />
-                                        Ingreso manual de cliente
-                                    </>
-                                )}
+                        <div className="border rounded-lg p-4 space-y-3 bg-green-50/50 border-green-200">
+                            <h4 className="font-medium flex items-center gap-2 text-green-700">
+                                <Plus className="h-4 w-4" />
+                                Nuevo Cliente
                             </h4>
 
                             <div className="space-y-2">
-                                <div className="flex gap-2">
-                                    <Badge>{newClient.documentType}</Badge>
-                                    <span className="font-mono">{newClient.document}</span>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-xs text-muted-foreground">Tipo Doc.</label>
+                                        <select
+                                            value={newClient.documentType || "DNI"}
+                                            onChange={(e) => setNewClient({ ...newClient, documentType: e.target.value })}
+                                            className="w-full h-10 px-3 border rounded-md bg-white"
+                                        >
+                                            <option value="DNI">DNI</option>
+                                            <option value="RUC">RUC</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-muted-foreground">Número</label>
+                                        <Input
+                                            value={newClient.document || ""}
+                                            onChange={(e) => setNewClient({ ...newClient, document: e.target.value })}
+                                            placeholder={newClient.documentType === "RUC" ? "20XXXXXXXXX" : "XXXXXXXX"}
+                                            maxLength={11}
+                                        />
+                                    </div>
                                 </div>
-                                <Input
-                                    value={newClient.name || ""}
-                                    onChange={(e) =>
-                                        setNewClient({ ...newClient, name: e.target.value })
-                                    }
-                                    placeholder="Razón Social / Nombre"
-                                />
-                                <Input
-                                    value={newClient.address || ""}
-                                    onChange={(e) =>
-                                        setNewClient({ ...newClient, address: e.target.value })
-                                    }
-                                    placeholder="Dirección"
-                                />
+                                <div>
+                                    <label className="text-xs text-muted-foreground">Nombre / Razón Social *</label>
+                                    <Input
+                                        value={newClient.name || ""}
+                                        onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                                        placeholder="Nombre completo o razón social"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-muted-foreground">Dirección</label>
+                                    <Input
+                                        value={newClient.address || ""}
+                                        onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                                        placeholder="Dirección fiscal"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-xs text-muted-foreground">Teléfono</label>
+                                        <Input
+                                            value={newClient.phone || ""}
+                                            onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                                            placeholder="999 999 999"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-muted-foreground">Email</label>
+                                        <Input
+                                            value={newClient.email || ""}
+                                            onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                                            placeholder="email@ejemplo.com"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 pt-2">
                                 <Button
                                     variant="outline"
                                     className="flex-1"
                                     onClick={() => setNewClient(null)}
                                 >
+                                    <X className="h-4 w-4 mr-1" />
                                     Cancelar
                                 </Button>
                                 <Button
-                                    className="flex-1"
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
                                     onClick={saveNewClient}
-                                    disabled={saving || !newClient.name}
+                                    disabled={saving || !newClient.name || !newClient.document}
                                 >
                                     {saving ? (
                                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     ) : (
                                         <Check className="h-4 w-4 mr-2" />
                                     )}
-                                    Usar Cliente
+                                    Guardar y Usar
                                 </Button>
                             </div>
                         </div>
                     )}
 
-                    {/* Sin resultados */}
-                    {search.length > 0 &&
-                        search.length < 8 &&
-                        results.length === 0 &&
-                        !loading && (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                                Ingresa al menos 8 dígitos para buscar por DNI/RUC
-                            </p>
-                        )}
+                    {/* Mensaje de ayuda */}
+                    {search.length > 0 && search.length < 3 && results.length === 0 && !loading && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                            Ingresa al menos 3 caracteres para buscar
+                        </p>
+                    )}
                 </CardContent>
             </Card>
         </div>
