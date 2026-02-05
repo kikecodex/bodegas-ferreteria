@@ -373,9 +373,32 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
         }
     };
 
-    // Abrir PDF en nueva pestaña
+    // Imprimir PDF directamente (abre diálogo de impresión del sistema)
     const openPDF = (saleId: string) => {
-        window.open(`/api/sales/${saleId}/pdf`, "_blank");
+        // Crear iframe oculto para cargar el PDF
+        const printFrame = document.createElement('iframe');
+        printFrame.style.position = 'fixed';
+        printFrame.style.right = '0';
+        printFrame.style.bottom = '0';
+        printFrame.style.width = '0';
+        printFrame.style.height = '0';
+        printFrame.style.border = 'none';
+        printFrame.src = `/api/sales/${saleId}/pdf`;
+
+        document.body.appendChild(printFrame);
+
+        // Esperar a que el PDF cargue y abrir diálogo de impresión
+        printFrame.onload = () => {
+            setTimeout(() => {
+                printFrame.contentWindow?.focus();
+                printFrame.contentWindow?.print();
+
+                // Remover iframe después de un tiempo
+                setTimeout(() => {
+                    document.body.removeChild(printFrame);
+                }, 1000);
+            }, 500);
+        };
     };
 
     // Cerrar modal de venta completada
