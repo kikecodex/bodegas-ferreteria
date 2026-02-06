@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
                     number: saleNumber,
                     clientId: clientId || null,
                     userId: defaultUser.id,
-                    subtotal,
+                    subtotal: taxCalc.subtotal + exemptAmount,  // Base imponible (sin IGV)
                     discount: totalDiscount,
                     tax,
                     total,
