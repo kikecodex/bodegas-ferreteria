@@ -53,13 +53,18 @@ export async function GET(
 
         // Construir datos para el PDF
         const tenantData = quotation.tenant;
+
+        // Usar logo actualizado del public folder
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const logoUrl = `${baseUrl}/logo.jpeg`;
+
         const company = {
             name: tenantData.tradeName || tenantData.name,
             ruc: tenantData.ruc || "",
             address: tenantData.address || "",
             phone: tenantData.phone || "",
             email: tenantData.email || "",
-            logo: tenantData.logo || ""
+            logo: logoUrl
         };
 
         const quotationData = {
