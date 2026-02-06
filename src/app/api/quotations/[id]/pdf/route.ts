@@ -54,8 +54,25 @@ export async function GET(
         // Construir datos para el PDF
         const tenantData = quotation.tenant;
 
-        // Usar logo de impresión térmica (igual que en ventas)
+        // Obtener logo como base64 data URI para @react-pdf (igual que en ventas)
+        let logoDataUri: string | undefined = undefined;
+        const path = await import('path');
+        const fs = await import('fs');
+
+        // Usar logo B/N subido por el cliente para impresoras térmicas
         const logoRelativePath = '/uploads/logos/logo_print.jpeg';
+        const logoAbsolutePath = path.join(process.cwd(), 'public', logoRelativePath);
+
+        if (fs.existsSync(logoAbsolutePath)) {
+            const logoBuffer = fs.readFileSync(logoAbsolutePath);
+            const base64 = logoBuffer.toString('base64');
+            const ext = path.extname(logoAbsolutePath).toLowerCase();
+            const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+            logoDataUri = `data:${mimeType};base64,${base64}`;
+            console.log(`Logo cotización cargado: ${logoAbsolutePath}, tamaño: ${logoBuffer.length} bytes`);
+        } else {
+            console.log(`Logo cotización NO encontrado: ${logoAbsolutePath}`);
+        }
 
         const company = {
             name: tenantData.tradeName || tenantData.name,
@@ -63,7 +80,7 @@ export async function GET(
             address: tenantData.address || "",
             phone: tenantData.phone || "",
             email: tenantData.email || "",
-            logo: logoRelativePath
+            logo: logoDataUri
         };
 
         const quotationData = {
