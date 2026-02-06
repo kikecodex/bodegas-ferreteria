@@ -17,7 +17,8 @@ import {
     Settings,
     LogOut,
     Lock,
-    Loader2
+    Loader2,
+    CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -50,6 +51,7 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas" },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Truck, label: "Proveedores", href: "/proveedores" },
     { icon: Box, label: "Compras", href: "/compras" },
@@ -144,8 +146,8 @@ export function Sidebar() {
                             key={item.label}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive
-                                    ? "bg-primary text-primary-foreground"
-                                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-sidebar-foreground hover:bg-sidebar-accent"
                                 }`}
                         >
                             <item.icon className={`h-5 w-5 ${isActive ? "" : "text-muted-foreground group-hover:text-foreground"}`} />

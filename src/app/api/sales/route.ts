@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         const skip = (page - 1) * limit;
 
         const status = searchParams.get("status") || "";
+        const paymentMethod = searchParams.get("paymentMethod") || "";
         const dateFrom = searchParams.get("dateFrom") || "";
         const dateTo = searchParams.get("dateTo") || "";
         const search = searchParams.get("search") || "";
@@ -36,15 +37,19 @@ export async function GET(request: NextRequest) {
             where.status = status;
         }
 
+        if (paymentMethod) {
+            where.paymentMethod = paymentMethod;
+        }
+
         if (dateFrom || dateTo) {
             where.createdAt = {};
             if (dateFrom) {
-                (where.createdAt as Record<string, unknown>).gte = new Date(dateFrom);
+                // Forzar inicio del día en hora local
+                (where.createdAt as Record<string, unknown>).gte = new Date(dateFrom + 'T00:00:00');
             }
             if (dateTo) {
-                const endDate = new Date(dateTo);
-                endDate.setHours(23, 59, 59, 999);
-                (where.createdAt as Record<string, unknown>).lte = endDate;
+                // Forzar fin del día en hora local
+                (where.createdAt as Record<string, unknown>).lte = new Date(dateTo + 'T23:59:59.999');
             }
         }
 
