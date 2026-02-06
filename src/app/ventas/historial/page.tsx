@@ -411,11 +411,12 @@ export default function HistorialVentasPage() {
             TARJETA: "bg-blue-500/20 text-blue-700",
             YAPE: "bg-purple-500/20 text-purple-700",
             PLIN: "bg-cyan-500/20 text-cyan-700",
-            TRANSFERENCIA: "bg-orange-500/20 text-orange-700"
+            TRANSFERENCIA: "bg-orange-500/20 text-orange-700",
+            CREDITO: "bg-amber-500/20 text-amber-700"
         };
         return (
             <Badge variant="outline" className={colors[method] || ""}>
-                {method}
+                {method === "CREDITO" ? "AL CRÉDITO" : method}
             </Badge>
         );
     };
@@ -544,7 +545,73 @@ export default function HistorialVentasPage() {
                 <div className="p-6 space-y-4">
                     {/* Filtros */}
                     <Card>
-                        <CardContent className="p-4">
+                        <CardContent className="p-4 space-y-3">
+                            {/* Botones de filtro rápido por fecha */}
+                            <div className="flex gap-2">
+                                <Button
+                                    variant={dateFrom === new Date().toISOString().split('T')[0] && dateTo === new Date().toISOString().split('T')[0] ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => {
+                                        const today = new Date().toISOString().split('T')[0];
+                                        setDateFrom(today);
+                                        setDateTo(today);
+                                    }}
+                                >
+                                    Hoy
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const yesterday = new Date();
+                                        yesterday.setDate(yesterday.getDate() - 1);
+                                        const yesterdayStr = yesterday.toISOString().split('T')[0];
+                                        setDateFrom(yesterdayStr);
+                                        setDateTo(yesterdayStr);
+                                    }}
+                                >
+                                    Ayer
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const today = new Date();
+                                        const weekAgo = new Date();
+                                        weekAgo.setDate(today.getDate() - 7);
+                                        setDateFrom(weekAgo.toISOString().split('T')[0]);
+                                        setDateTo(today.toISOString().split('T')[0]);
+                                    }}
+                                >
+                                    Semana
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const today = new Date();
+                                        const monthAgo = new Date();
+                                        monthAgo.setMonth(today.getMonth() - 1);
+                                        setDateFrom(monthAgo.toISOString().split('T')[0]);
+                                        setDateTo(today.toISOString().split('T')[0]);
+                                    }}
+                                >
+                                    Mes
+                                </Button>
+                                {(dateFrom || dateTo) && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setDateFrom("");
+                                            setDateTo("");
+                                        }}
+                                        className="text-muted-foreground"
+                                    >
+                                        Limpiar
+                                    </Button>
+                                )}
+                            </div>
                             <div className="flex gap-4 items-end">
                                 <div className="flex-1">
                                     <label className="text-sm text-muted-foreground">Buscar</label>

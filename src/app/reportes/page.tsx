@@ -33,11 +33,13 @@ interface DashboardStats {
         ayer: number;
         semana: number;
         mes: number;
+        fechaSeleccionada?: number;
     };
     cantidadVentas: {
         hoy: number;
         semana: number;
         mes: number;
+        fechaSeleccionada?: number;
     };
     productos: {
         total: number;
@@ -72,6 +74,7 @@ export default function ReportesPage() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [period, setPeriod] = useState<"hoy" | "semana" | "mes">("hoy");
+    const [selectedDate, setSelectedDate] = useState<string>("");  // Fecha específica YYYY-MM-DD
 
     const fetchStats = async () => {
         setLoading(true);
@@ -128,6 +131,19 @@ export default function ReportesPage() {
                 ventasPorMetodo[v.paymentMethod] = (ventasPorMetodo[v.paymentMethod] || 0) + v.total;
             });
 
+            // Si hay fecha específica seleccionada, calcular ventas de ese día
+            let ventasFechaSeleccionada: typeof ventasHoy = [];
+            let totalFechaSeleccionada = 0;
+            if (selectedDate) {
+                const selDate = new Date(selectedDate + 'T00:00:00');
+                const selDateEnd = new Date(selectedDate + 'T23:59:59');
+                ventasFechaSeleccionada = sales.filter((s: { createdAt: string; status: string }) => {
+                    const saleDate = new Date(s.createdAt);
+                    return saleDate >= selDate && saleDate <= selDateEnd && s.status === "COMPLETADA";
+                });
+                totalFechaSeleccionada = ventasFechaSeleccionada.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
+            }
+
             // Top productos (simulado - necesitaría agregación en backend)
             const productSales: Record<string, { name: string; code: string; total: number; qty: number }> = {};
             // Por ahora, mostrar los productos con menos stock
@@ -148,12 +164,14 @@ export default function ReportesPage() {
                     hoy: totalHoy,
                     ayer: totalAyer,
                     semana: totalSemana,
-                    mes: totalMes
+                    mes: totalMes,
+                    fechaSeleccionada: selectedDate ? totalFechaSeleccionada : undefined
                 },
                 cantidadVentas: {
                     hoy: ventasHoy.length,
                     semana: ventasSemana.length,
-                    mes: ventasMes.length
+                    mes: ventasMes.length,
+                    fechaSeleccionada: selectedDate ? ventasFechaSeleccionada.length : undefined
                 },
                 productos: {
                     total: products.length,
@@ -176,7 +194,7 @@ export default function ReportesPage() {
 
     useEffect(() => {
         fetchStats();
-    }, []);
+    }, [selectedDate]);
 
     const getVariation = (current: number, previous: number) => {
         if (previous === 0) return current > 0 ? 100 : 0;
@@ -209,8 +227,8 @@ export default function ReportesPage() {
                                 key={item.label}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
-                                        ? "bg-red-600 text-white"
-                                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    ? "bg-red-600 text-white"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                     }`}
                             >
                                 <Icon className="h-5 w-5" />
@@ -249,14 +267,42 @@ export default function ReportesPage() {
                 <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Reportes y Estadísticas</h1>
                     <div className="flex items-center gap-2">
+                        {/* Selector de fecha específica */}
+                        <div className="flex items-center gap-2 border rounded-lg px-2 py-1">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => {
+                                    setSelectedDate(e.target.value);
+                                    if (e.target.value) {
+                                        fetchStats();
+                                    }
+                                }}
+                                className="bg-transparent border-none text-sm focus:outline-none"
+                            />
+                            {selectedDate && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => setSelectedDate("")}
+                                >
+                                    ×
+                                </Button>
+                            )}
+                        </div>
                         <div className="flex border rounded-lg overflow-hidden">
                             {(["hoy", "semana", "mes"] as const).map((p) => (
                                 <Button
                                     key={p}
-                                    variant={period === p ? "default" : "ghost"}
+                                    variant={period === p && !selectedDate ? "default" : "ghost"}
                                     size="sm"
                                     className="rounded-none"
-                                    onClick={() => setPeriod(p)}
+                                    onClick={() => {
+                                        setPeriod(p);
+                                        setSelectedDate("");
+                                    }}
                                 >
                                     {p.charAt(0).toUpperCase() + p.slice(1)}
                                 </Button>
@@ -278,6 +324,29 @@ export default function ReportesPage() {
                     </div>
                 ) : stats && (
                     <div className="p-6 space-y-6">
+                        {/* Card de Fecha Seleccionada */}
+                        {selectedDate && stats.ventas.fechaSeleccionada !== undefined && (
+                            <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
+                                <CardContent className="p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Calendar className="h-6 w-6" />
+                                                <p className="text-white/80 text-lg font-medium">
+                                                    Ventas del {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                                </p>
+                                            </div>
+                                            <p className="text-4xl font-bold">S/ {stats.ventas.fechaSeleccionada.toFixed(2)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-3xl font-bold">{stats.cantidadVentas.fechaSeleccionada}</p>
+                                            <p className="text-white/80">transacciones</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         {/* KPIs Principales */}
                         <div className="grid grid-cols-4 gap-4">
                             <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">

@@ -56,7 +56,8 @@ interface POSInterfaceProps {
 
 const paymentMethods = [
     { id: "EFECTIVO", label: "Efectivo", icon: Banknote, color: "bg-green-500" },
-    { id: "YAPE", label: "Yape", icon: Smartphone, color: "bg-purple-500" }
+    { id: "YAPE", label: "Yape", icon: Smartphone, color: "bg-purple-500" },
+    { id: "CREDITO", label: "Crédito", icon: CreditCard, color: "bg-amber-500" }
 ];
 
 export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
