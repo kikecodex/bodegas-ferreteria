@@ -149,7 +149,11 @@ export default function HistorialVentasPage() {
             const res = await fetch(`/api/sales?${params}`);
             if (res.ok) {
                 const data = await res.json();
-                setSales(data.sales || []);
+                // Excluir ventas a crédito (se manejan en módulo /creditos)
+                const salesFiltradas = (data.sales || []).filter(
+                    (s: { paymentMethod: string }) => s.paymentMethod !== "CREDITO"
+                );
+                setSales(salesFiltradas);
                 setTotalPages(data.pagination?.totalPages || 1);
             }
         } catch (error) {

@@ -94,9 +94,11 @@ export default function ReportesPage() {
             const salesData = salesRes.ok ? await salesRes.json() : { sales: [] };
             const sales = salesData.sales || [];
 
-            // Calcular fechas
+            // Calcular fechas (hora local)
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
             const weekAgo = new Date(today);
@@ -104,19 +106,28 @@ export default function ReportesPage() {
             const monthAgo = new Date(today);
             monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-            // Filtrar ventas por período
-            const ventasHoy = sales.filter((s: { createdAt: string; status: string }) =>
-                new Date(s.createdAt) >= today && s.status === "COMPLETADA"
-            );
-            const ventasAyer = sales.filter((s: { createdAt: string; status: string }) => {
-                const date = new Date(s.createdAt);
-                return date >= yesterday && date < today && s.status === "COMPLETADA";
+            // Filtrar ventas por período (excluir ventas a crédito - esas se manejan aparte)
+            const ventasHoy = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
+                const saleDate = new Date(s.createdAt);
+                return saleDate >= today && saleDate < tomorrow &&
+                    s.status === "COMPLETADA" &&
+                    s.paymentMethod !== "CREDITO";
             });
-            const ventasSemana = sales.filter((s: { createdAt: string; status: string }) =>
-                new Date(s.createdAt) >= weekAgo && s.status === "COMPLETADA"
+            const ventasAyer = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
+                const date = new Date(s.createdAt);
+                return date >= yesterday && date < today &&
+                    s.status === "COMPLETADA" &&
+                    s.paymentMethod !== "CREDITO";
+            });
+            const ventasSemana = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) =>
+                new Date(s.createdAt) >= weekAgo &&
+                s.status === "COMPLETADA" &&
+                s.paymentMethod !== "CREDITO"
             );
-            const ventasMes = sales.filter((s: { createdAt: string; status: string }) =>
-                new Date(s.createdAt) >= monthAgo && s.status === "COMPLETADA"
+            const ventasMes = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) =>
+                new Date(s.createdAt) >= monthAgo &&
+                s.status === "COMPLETADA" &&
+                s.paymentMethod !== "CREDITO"
             );
 
             // Calcular totales
