@@ -54,9 +54,8 @@ export async function GET(
         // Construir datos para el PDF
         const tenantData = quotation.tenant;
 
-        // Usar logo de impresión térmica (blanco y negro)
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const logoUrl = `${baseUrl}/logo_print.png`;
+        // Usar logo de impresión térmica (igual que en ventas)
+        const logoRelativePath = '/uploads/logos/logo_print.jpeg';
 
         const company = {
             name: tenantData.tradeName || tenantData.name,
@@ -64,7 +63,7 @@ export async function GET(
             address: tenantData.address || "",
             phone: tenantData.phone || "",
             email: tenantData.email || "",
-            logo: logoUrl
+            logo: logoRelativePath
         };
 
         const quotationData = {
