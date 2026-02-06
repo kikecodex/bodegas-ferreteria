@@ -1,5 +1,4 @@
-// PDF Component for Quotation Generation (Server-side)
-
+// PDF Component for Quotation Generation (Server-side) - Formato Ticket POS
 import {
     Document,
     Page,
@@ -53,349 +52,304 @@ interface QuotationPDFProps {
     company: CompanyInfo;
 }
 
-// Formato A4 para cotizaciones
+// Formato ticket POS: 72.1mm x 297mm (aprox 204.3 x 841.8 puntos)
+const TICKET_WIDTH = 204.3;
+
+// Estilos OPTIMIZADOS para impresora térmica POS-80 (igual que InvoicePDF)
 const styles = StyleSheet.create({
     page: {
-        padding: 40,
-        fontSize: 10,
-        fontFamily: "Helvetica"
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 30,
-        borderBottomWidth: 2,
-        borderBottomColor: "#e5e5e5",
-        paddingBottom: 20
+        padding: 4,
+        paddingTop: 2,
+        fontSize: 9,
+        fontFamily: "Helvetica-Bold",
+        width: TICKET_WIDTH,
+        color: "#000000"
     },
     logoContainer: {
-        width: 150
+        alignItems: "center",
+        marginBottom: 0,
+        paddingBottom: 0
     },
     logo: {
-        width: 120,
+        width: 188,
         height: "auto",
-        objectFit: "contain"
+        marginBottom: 0
     },
-    companyInfo: {
-        textAlign: "right"
+    companySection: {
+        alignItems: "center",
+        marginBottom: 4,
+        paddingBottom: 3,
+        borderBottomWidth: 1,
+        borderBottomColor: "#000"
     },
     companyName: {
-        fontSize: 16,
-        fontWeight: "bold",
-        fontFamily: "Helvetica-Bold",
-        color: "#c41e3a"
-    },
-    companyDetail: {
-        fontSize: 9,
-        color: "#666",
-        marginTop: 2
-    },
-    documentHeader: {
-        backgroundColor: "#c41e3a",
-        padding: 15,
-        marginBottom: 20,
-        alignItems: "center"
-    },
-    documentTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-        fontFamily: "Helvetica-Bold",
-        color: "#ffffff"
-    },
-    documentNumber: {
-        fontSize: 14,
-        color: "#ffffff",
-        marginTop: 5
-    },
-    infoSection: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 20
-    },
-    infoBox: {
-        width: "48%",
-        backgroundColor: "#f9f9f9",
-        padding: 15,
-        borderRadius: 4
-    },
-    infoTitle: {
         fontSize: 10,
         fontWeight: "bold",
-        fontFamily: "Helvetica-Bold",
-        marginBottom: 8,
-        color: "#333"
+        textAlign: "center",
+        marginBottom: 2
+    },
+    companyInfo: {
+        fontSize: 8,
+        textAlign: "center",
+        marginBottom: 1
+    },
+    documentSection: {
+        alignItems: "center",
+        marginBottom: 6,
+        paddingVertical: 4
+    },
+    documentType: {
+        fontSize: 10,
+        fontWeight: "bold",
+        textAlign: "center",
+        marginBottom: 2
+    },
+    documentNumber: {
+        fontSize: 10,
+        fontWeight: "bold"
+    },
+    infoSection: {
+        marginBottom: 6,
+        fontSize: 8
     },
     infoRow: {
         flexDirection: "row",
-        marginBottom: 4
+        marginBottom: 1
     },
     infoLabel: {
-        width: 80,
-        fontSize: 9,
-        color: "#666"
+        width: 65
     },
     infoValue: {
-        flex: 1,
-        fontSize: 9,
-        fontFamily: "Helvetica-Bold"
+        flex: 1
     },
-    table: {
-        marginTop: 10
+    separator: {
+        borderBottomWidth: 1,
+        borderBottomStyle: "dashed",
+        borderBottomColor: "#000",
+        marginVertical: 4
     },
     tableHeader: {
         flexDirection: "row",
-        backgroundColor: "#333",
-        padding: 8
+        borderBottomWidth: 1,
+        borderBottomColor: "#000",
+        paddingBottom: 2,
+        marginBottom: 4,
+        fontWeight: "bold",
+        fontSize: 8
     },
-    tableHeaderCell: {
-        color: "#fff",
-        fontSize: 9,
-        fontFamily: "Helvetica-Bold"
-    },
+    colCant: { width: 25, textAlign: "center" },
+    colProducto: { flex: 1 },
+    colPrecio: { width: 35, textAlign: "right" },
+    colTotal: { width: 35, textAlign: "right" },
     tableRow: {
         flexDirection: "row",
-        borderBottomWidth: 1,
-        borderBottomColor: "#eee",
-        padding: 8
+        marginBottom: 2,
+        fontSize: 8
     },
-    tableRowAlt: {
-        backgroundColor: "#f9f9f9"
-    },
-    tableCell: {
-        fontSize: 9
-    },
-    colCode: { width: "12%" },
-    colDesc: { width: "38%" },
-    colQty: { width: "10%", textAlign: "center" },
-    colPrice: { width: "15%", textAlign: "right" },
-    colDisc: { width: "10%", textAlign: "right" },
-    colSubtotal: { width: "15%", textAlign: "right" },
     totalsSection: {
-        marginTop: 20,
-        alignItems: "flex-end"
-    },
-    totalsBox: {
-        width: 250,
-        backgroundColor: "#f9f9f9",
-        padding: 15
+        marginTop: 6,
+        borderTopWidth: 1,
+        borderTopStyle: "dashed",
+        borderTopColor: "#000",
+        paddingTop: 4
     },
     totalsRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 5
+        justifyContent: "flex-end",
+        marginBottom: 1,
+        fontSize: 8
     },
     totalsLabel: {
-        fontSize: 10,
-        color: "#666"
+        width: 60,
+        textAlign: "right",
+        marginRight: 8
     },
     totalsValue: {
-        fontSize: 10,
-        fontFamily: "Helvetica-Bold"
+        width: 45,
+        textAlign: "right"
     },
-    totalFinal: {
+    totalFinalRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        borderTopWidth: 2,
-        borderTopColor: "#c41e3a",
-        paddingTop: 10,
-        marginTop: 10
+        justifyContent: "flex-end",
+        marginTop: 2,
+        paddingTop: 2,
+        borderTopWidth: 1,
+        borderTopColor: "#000"
     },
     totalFinalLabel: {
-        fontSize: 14,
-        fontFamily: "Helvetica-Bold"
+        width: 60,
+        textAlign: "right",
+        marginRight: 8,
+        fontSize: 10,
+        fontWeight: "bold"
     },
     totalFinalValue: {
-        fontSize: 14,
-        fontFamily: "Helvetica-Bold",
-        color: "#c41e3a"
-    },
-    notes: {
-        marginTop: 30,
-        padding: 15,
-        backgroundColor: "#fff9e6",
-        borderLeftWidth: 4,
-        borderLeftColor: "#f0c14b"
-    },
-    notesTitle: {
+        width: 45,
+        textAlign: "right",
         fontSize: 10,
-        fontFamily: "Helvetica-Bold",
-        marginBottom: 5
+        fontWeight: "bold"
     },
-    notesText: {
-        fontSize: 9,
-        color: "#666"
-    },
-    validity: {
-        marginTop: 20,
-        padding: 15,
-        backgroundColor: "#e8f4e8",
-        textAlign: "center"
+    validitySection: {
+        marginTop: 6,
+        paddingTop: 4,
+        borderTopWidth: 1,
+        borderTopStyle: "dashed",
+        borderTopColor: "#000",
+        alignItems: "center"
     },
     validityText: {
-        fontSize: 10,
-        color: "#2d6a2d"
+        fontSize: 8,
+        textAlign: "center"
     },
     footer: {
-        position: "absolute",
-        bottom: 30,
-        left: 40,
-        right: 40,
-        textAlign: "center",
-        borderTopWidth: 1,
-        borderTopColor: "#eee",
-        paddingTop: 15
+        marginTop: 10,
+        alignItems: "center"
     },
-    footerText: {
+    thanksText: {
         fontSize: 9,
-        color: "#999"
+        fontWeight: "bold",
+        textAlign: "center"
     }
 });
 
 // Formateo
-const formatCurrency = (amount: number): string => `S/ ${amount.toFixed(2)}`;
+const formatCurrency = (amount: number): string => amount.toFixed(2);
 
 const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("es-PE", {
         day: "2-digit",
-        month: "long",
+        month: "2-digit",
         year: "numeric"
     });
 };
 
-// Componente PDF Cotización
+const formatDateTime = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("es-PE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    }) + " " + date.toLocaleTimeString("es-PE", {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+};
+
+// Componente PDF Cotización - Formato Ticket POS
 export function QuotationPDF({ quotation, company }: QuotationPDFProps) {
+    // Calcular subtotal e IGV correctamente desde el total
+    // Total ya incluye IGV, así que: subtotal = total / 1.18, igv = total - subtotal
+    const subtotalCalculado = quotation.total / 1.18;
+    const igvCalculado = quotation.total - subtotalCalculado;
+
     return (
         <Document>
-            <Page size="A4" style={styles.page}>
-                {/* Header */}
-                <View style={styles.header}>
+            <Page size={[TICKET_WIDTH, 700]} style={styles.page}>
+                {/* Logo B/N para impresoras térmicas */}
+                {company.logo && (
                     <View style={styles.logoContainer}>
-                        {company.logo && (
-                            <Image src={company.logo} style={styles.logo} />
-                        )}
-                    </View>
-                    <View style={styles.companyInfo}>
-                        <Text style={styles.companyName}>{company.name}</Text>
-                        <Text style={styles.companyDetail}>RUC: {company.ruc}</Text>
-                        <Text style={styles.companyDetail}>{company.address}</Text>
-                        <Text style={styles.companyDetail}>Tel: {company.phone}</Text>
-                        {company.email && (
-                            <Text style={styles.companyDetail}>{company.email}</Text>
-                        )}
-                    </View>
-                </View>
-
-                {/* Document Title */}
-                <View style={styles.documentHeader}>
-                    <Text style={styles.documentTitle}>COTIZACIÓN</Text>
-                    <Text style={styles.documentNumber}>{quotation.number}</Text>
-                </View>
-
-                {/* Info Section */}
-                <View style={styles.infoSection}>
-                    <View style={styles.infoBox}>
-                        <Text style={styles.infoTitle}>DATOS DEL CLIENTE</Text>
-                        {quotation.client ? (
-                            <>
-                                <View style={styles.infoRow}>
-                                    <Text style={styles.infoLabel}>{quotation.client.documentType}:</Text>
-                                    <Text style={styles.infoValue}>{quotation.client.document}</Text>
-                                </View>
-                                <View style={styles.infoRow}>
-                                    <Text style={styles.infoLabel}>Cliente:</Text>
-                                    <Text style={styles.infoValue}>{quotation.client.name}</Text>
-                                </View>
-                                {quotation.client.address && (
-                                    <View style={styles.infoRow}>
-                                        <Text style={styles.infoLabel}>Dirección:</Text>
-                                        <Text style={styles.infoValue}>{quotation.client.address}</Text>
-                                    </View>
-                                )}
-                            </>
-                        ) : (
-                            <Text style={styles.infoValue}>Sin cliente asignado</Text>
-                        )}
-                    </View>
-                    <View style={styles.infoBox}>
-                        <Text style={styles.infoTitle}>DATOS DE LA COTIZACIÓN</Text>
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Fecha:</Text>
-                            <Text style={styles.infoValue}>{formatDate(quotation.createdAt)}</Text>
-                        </View>
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Válida hasta:</Text>
-                            <Text style={styles.infoValue}>{formatDate(quotation.validUntil)}</Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Items Table */}
-                <View style={styles.table}>
-                    <View style={styles.tableHeader}>
-                        <Text style={[styles.tableHeaderCell, styles.colCode]}>CÓDIGO</Text>
-                        <Text style={[styles.tableHeaderCell, styles.colDesc]}>DESCRIPCIÓN</Text>
-                        <Text style={[styles.tableHeaderCell, styles.colQty]}>CANT.</Text>
-                        <Text style={[styles.tableHeaderCell, styles.colPrice]}>P. UNIT.</Text>
-                        <Text style={[styles.tableHeaderCell, styles.colDisc]}>DESC.</Text>
-                        <Text style={[styles.tableHeaderCell, styles.colSubtotal]}>SUBTOTAL</Text>
-                    </View>
-                    {quotation.items.map((item, index) => (
-                        <View key={index} style={index % 2 === 1 ? [styles.tableRow, styles.tableRowAlt] : styles.tableRow}>
-                            <Text style={[styles.tableCell, styles.colCode]}>{item.productCode}</Text>
-                            <Text style={[styles.tableCell, styles.colDesc]}>{item.productName}</Text>
-                            <Text style={[styles.tableCell, styles.colQty]}>{item.quantity}</Text>
-                            <Text style={[styles.tableCell, styles.colPrice]}>{formatCurrency(item.unitPrice)}</Text>
-                            <Text style={[styles.tableCell, styles.colDisc]}>{formatCurrency(item.discount)}</Text>
-                            <Text style={[styles.tableCell, styles.colSubtotal]}>{formatCurrency(item.subtotal)}</Text>
-                        </View>
-                    ))}
-                </View>
-
-                {/* Totals */}
-                <View style={styles.totalsSection}>
-                    <View style={styles.totalsBox}>
-                        <View style={styles.totalsRow}>
-                            <Text style={styles.totalsLabel}>Subtotal:</Text>
-                            <Text style={styles.totalsValue}>{formatCurrency(quotation.subtotal)}</Text>
-                        </View>
-                        {quotation.discount > 0 && (
-                            <View style={styles.totalsRow}>
-                                <Text style={styles.totalsLabel}>Descuento:</Text>
-                                <Text style={styles.totalsValue}>-{formatCurrency(quotation.discount)}</Text>
-                            </View>
-                        )}
-                        <View style={styles.totalsRow}>
-                            <Text style={styles.totalsLabel}>IGV (18%):</Text>
-                            <Text style={styles.totalsValue}>{formatCurrency(quotation.tax)}</Text>
-                        </View>
-                        <View style={styles.totalFinal}>
-                            <Text style={styles.totalFinalLabel}>TOTAL:</Text>
-                            <Text style={styles.totalFinalValue}>{formatCurrency(quotation.total)}</Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Notes */}
-                {quotation.notes && (
-                    <View style={styles.notes}>
-                        <Text style={styles.notesTitle}>Observaciones:</Text>
-                        <Text style={styles.notesText}>{quotation.notes}</Text>
+                        <Image src={company.logo} style={styles.logo} />
                     </View>
                 )}
 
-                {/* Validity Notice */}
-                <View style={styles.validity}>
+                {/* Datos de empresa */}
+                <View style={styles.companySection}>
+                    <Text style={styles.companyName}>CORPORACIÓN OROPEZA'S</Text>
+                    <Text style={styles.companyInfo}>RUC: 10712870058</Text>
+                    <Text style={styles.companyInfo}>YANAC LOPEZ CHRISTIAN FRANKLIN</Text>
+                    <Text style={styles.companyInfo}>Dirección: Calle Marian s/n Independencia-Huaraz</Text>
+                    <Text style={styles.companyInfo}>Cel: 938408777</Text>
+                </View>
+
+                {/* Tipo y Número de Documento */}
+                <View style={styles.documentSection}>
+                    <Text style={styles.documentType}>COTIZACIÓN</Text>
+                    <Text style={styles.documentNumber}>{quotation.number}</Text>
+                </View>
+
+                {/* Fechas e info */}
+                <View style={styles.infoSection}>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>F.EMISION:</Text>
+                        <Text style={styles.infoValue}>{formatDate(quotation.createdAt)}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>VÁLIDO:</Text>
+                        <Text style={styles.infoValue}>{formatDate(quotation.validUntil)}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>F.IMPRESION:</Text>
+                        <Text style={styles.infoValue}>{formatDateTime(new Date().toISOString())}</Text>
+                    </View>
+                    {quotation.client && (
+                        <>
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>{quotation.client.documentType}:</Text>
+                                <Text style={styles.infoValue}>{quotation.client.document}</Text>
+                            </View>
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>CLIENTE:</Text>
+                                <Text style={styles.infoValue}>{quotation.client.name}</Text>
+                            </View>
+                        </>
+                    )}
+                </View>
+
+                <View style={styles.separator} />
+
+                {/* Encabezado de tabla */}
+                <View style={styles.tableHeader}>
+                    <Text style={styles.colCant}>CANT</Text>
+                    <Text style={styles.colProducto}>PRODUCTO</Text>
+                    <Text style={styles.colPrecio}>PRECIO</Text>
+                    <Text style={styles.colTotal}>TOTAL</Text>
+                </View>
+
+                {/* Items */}
+                {quotation.items.map((item, index) => (
+                    <View key={index} style={styles.tableRow}>
+                        <Text style={styles.colCant}>{item.quantity}</Text>
+                        <Text style={styles.colProducto}>{item.productName}</Text>
+                        <Text style={styles.colPrecio}>{formatCurrency(item.unitPrice)}</Text>
+                        <Text style={styles.colTotal}>{formatCurrency(item.subtotal)}</Text>
+                    </View>
+                ))}
+
+                <View style={styles.separator} />
+
+                {/* Totales (estilo Oropeza) - Cálculo correcto */}
+                <View style={styles.totalsSection}>
+                    {quotation.discount > 0 && (
+                        <View style={styles.totalsRow}>
+                            <Text style={styles.totalsLabel}>DESCUENTO:</Text>
+                            <Text style={styles.totalsValue}>S/. {formatCurrency(quotation.discount)}</Text>
+                        </View>
+                    )}
+                    <View style={styles.totalsRow}>
+                        <Text style={styles.totalsLabel}>SUBTOTAL:</Text>
+                        <Text style={styles.totalsValue}>S/. {formatCurrency(subtotalCalculado)}</Text>
+                    </View>
+                    <View style={styles.totalsRow}>
+                        <Text style={styles.totalsLabel}>IGV (18%):</Text>
+                        <Text style={styles.totalsValue}>S/. {formatCurrency(igvCalculado)}</Text>
+                    </View>
+                    <View style={styles.totalFinalRow}>
+                        <Text style={styles.totalFinalLabel}>TOTAL:</Text>
+                        <Text style={styles.totalFinalValue}>S/. {formatCurrency(quotation.total)}</Text>
+                    </View>
+                </View>
+
+                {/* Validez */}
+                <View style={styles.validitySection}>
                     <Text style={styles.validityText}>
-                        ✓ Esta cotización es válida hasta el {formatDate(quotation.validUntil)}
+                        Esta cotización es válida hasta el {formatDate(quotation.validUntil)}
                     </Text>
                 </View>
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>
-                        Gracias por su preferencia • {company.name} • {company.phone}
-                    </Text>
+                    <Text style={styles.thanksText}>Gracias por su preferencia</Text>
                 </View>
             </Page>
         </Document>
