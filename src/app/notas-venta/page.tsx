@@ -96,6 +96,12 @@ export default function NotasVentaPage() {
     const [search, setSearch] = useState("");
     const [showForm, setShowForm] = useState(false);
 
+    // Estado para modal de detalle
+    const [selectedNote, setSelectedNote] = useState<SalesNote & { items?: Array<{ productCode: string; productName: string; quantity: number; unitPrice: number; discount: number; subtotal: number }> } | null>(null);
+    const [showDetail, setShowDetail] = useState(false);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [printing, setPrinting] = useState(false);
+
     // Form state
     const [productSearch, setProductSearch] = useState("");
     const [products, setProducts] = useState<Product[]>([]);
@@ -106,7 +112,7 @@ export default function NotasVentaPage() {
     const [saving, setSaving] = useState(false);
     const [searchingProducts, setSearchingProducts] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
-    const [lastNote, setLastNote] = useState<{ number: string; total: number } | null>(null);
+    const [lastNote, setLastNote] = useState<{ number: string; total: number; id?: string } | null>(null);
 
     const fetchSalesNotes = useCallback(async () => {
         setLoading(true);
@@ -236,7 +242,7 @@ export default function NotasVentaPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                setLastNote({ number: data.number, total: data.total });
+                setLastNote({ number: data.number, total: data.total, id: data.id });
                 setShowForm(false);
                 setCart([]);
                 setNotes("");
@@ -264,6 +270,47 @@ export default function NotasVentaPage() {
         });
     };
 
+    // Ver detalle de nota de venta
+    const viewNote = async (id: string) => {
+        setLoadingDetail(true);
+        try {
+            const res = await fetch(`/api/sales-notes/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedNote(data);
+                setShowDetail(true);
+            }
+        } catch (error) {
+            console.error("Error fetching note:", error);
+        } finally {
+            setLoadingDetail(false);
+        }
+    };
+
+    // Imprimir nota de venta
+    const printNote = async (id: string) => {
+        setPrinting(true);
+        try {
+            const res = await fetch(`/api/sales-notes/${id}/pdf`);
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const printWindow = window.open(url, '_blank');
+                if (printWindow) {
+                    printWindow.onload = () => {
+                        printWindow.print();
+                    };
+                }
+            } else {
+                alert("Error al generar PDF");
+            }
+        } catch (error) {
+            console.error("Error printing note:", error);
+            alert("Error al imprimir nota");
+        } finally {
+            setPrinting(false);
+        }
+    };
     return (
         <div className="flex min-h-screen bg-background">
             {/* Sidebar */}
@@ -376,10 +423,22 @@ export default function NotasVentaPage() {
                                                 <TableCell className="text-sm">{formatDate(note.createdAt)}</TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-1">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            onClick={() => viewNote(note.id)}
+                                                            disabled={loadingDetail}
+                                                        >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            onClick={() => printNote(note.id)}
+                                                            disabled={printing}
+                                                        >
                                                             <Printer className="h-4 w-4" />
                                                         </Button>
                                                     </div>
@@ -590,11 +649,107 @@ export default function NotasVentaPage() {
                                 <Button variant="outline" className="flex-1" onClick={() => setShowSuccess(false)}>
                                     Cerrar
                                 </Button>
-                                <Button className="flex-1">
+                                <Button
+                                    className="flex-1"
+                                    onClick={() => {
+                                        if (lastNote.id) {
+                                            setShowSuccess(false);
+                                            printNote(lastNote.id);
+                                        }
+                                    }}
+                                    disabled={printing}
+                                >
                                     <Printer className="h-4 w-4 mr-2" />
                                     Imprimir
                                 </Button>
                             </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Modal Detalle de Nota de Venta */}
+            {showDetail && selectedNote && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <Card className="w-[600px] max-h-[90vh] overflow-y-auto">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Receipt className="h-5 w-5" />
+                                    Nota de Venta {selectedNote.number}
+                                </CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {formatDate(selectedNote.createdAt)} • {selectedNote.paymentMethod}
+                                </p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setShowDetail(false)}>
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {/* Cliente */}
+                            <div className="p-3 bg-muted rounded-lg">
+                                <p className="text-sm text-muted-foreground">Cliente</p>
+                                <p className="font-medium">
+                                    {selectedNote.client?.name || "Público General"}
+                                </p>
+                                {selectedNote.client?.document && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {selectedNote.client.document}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Items */}
+                            <div>
+                                <p className="text-sm font-medium mb-2">Items</p>
+                                <div className="border rounded-lg divide-y">
+                                    {selectedNote.items?.map((item, idx) => (
+                                        <div key={idx} className="p-3 flex justify-between">
+                                            <div>
+                                                <p className="font-medium">{item.productName}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {item.quantity} x S/ {item.unitPrice.toFixed(2)}
+                                                </p>
+                                            </div>
+                                            <p className="font-bold">S/ {item.subtotal.toFixed(2)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Totales */}
+                            <div className="bg-muted p-4 rounded-lg space-y-1">
+                                <div className="flex justify-between text-sm">
+                                    <span>Subtotal</span>
+                                    <span>S/ {selectedNote.subtotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span>IGV (18%)</span>
+                                    <span>S/ {selectedNote.tax.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                                    <span>Total</span>
+                                    <span>S/ {selectedNote.total.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {/* Botón Imprimir */}
+                            <Button
+                                className="w-full"
+                                onClick={() => {
+                                    setShowDetail(false);
+                                    printNote(selectedNote.id);
+                                }}
+                                disabled={printing}
+                            >
+                                {printing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : (
+                                    <Printer className="h-4 w-4 mr-2" />
+                                )}
+                                Imprimir Nota de Venta
+                            </Button>
                         </CardContent>
                     </Card>
                 </div>

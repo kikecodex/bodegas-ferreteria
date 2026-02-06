@@ -92,6 +92,7 @@ export default function FacturasPage() {
     // Modal de detalle
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
+    const [downloading, setDownloading] = useState(false);
 
     // Stats
     const [stats, setStats] = useState({
@@ -162,6 +163,31 @@ export default function FacturasPage() {
         }
     };
 
+    // Descargar/Imprimir PDF de venta
+    const downloadPDF = async (saleId: string, saleNumber: string) => {
+        setDownloading(true);
+        try {
+            const res = await fetch(`/api/sales/${saleId}/pdf`);
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const printWindow = window.open(url, '_blank');
+                if (printWindow) {
+                    printWindow.onload = () => {
+                        printWindow.print();
+                    };
+                }
+            } else {
+                alert("Error al generar PDF");
+            }
+        } catch (error) {
+            console.error("Error downloading PDF:", error);
+            alert("Error al descargar PDF");
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     const formatDate = (date: string) => {
         return new Date(date).toLocaleDateString("es-PE", {
             day: "2-digit",
@@ -207,8 +233,8 @@ export default function FacturasPage() {
                                 key={item.label}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
-                                        ? "bg-red-600 text-white"
-                                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    ? "bg-red-600 text-white"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                     }`}
                             >
                                 <Icon className="h-5 w-5" />
@@ -430,6 +456,8 @@ export default function FacturasPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         title="Descargar PDF"
+                                                        onClick={() => downloadPDF(sale.id, sale.number)}
+                                                        disabled={downloading}
                                                     >
                                                         <Download className="h-4 w-4" />
                                                     </Button>
@@ -532,7 +560,15 @@ export default function FacturasPage() {
                                 </div>
                             </div>
 
-                            <Button className="w-full" variant="outline">
+                            <Button
+                                className="w-full"
+                                variant="outline"
+                                onClick={() => {
+                                    setSelectedSale(null);
+                                    downloadPDF(selectedSale.id, selectedSale.number);
+                                }}
+                                disabled={downloading}
+                            >
                                 <Download className="h-4 w-4 mr-2" />
                                 Descargar PDF
                             </Button>

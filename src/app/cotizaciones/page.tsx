@@ -99,6 +99,12 @@ export default function CotizacionesPage() {
     const [statusFilter, setStatusFilter] = useState("");
     const [showForm, setShowForm] = useState(false);
 
+    // Estado para modal de detalle
+    const [selectedQuotation, setSelectedQuotation] = useState<Quotation & { items?: Array<{ productCode: string; productName: string; quantity: number; unitPrice: number; discount: number; subtotal: number }> } | null>(null);
+    const [showDetail, setShowDetail] = useState(false);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [printing, setPrinting] = useState(false);
+
     // Form state
     const [productSearch, setProductSearch] = useState("");
     const [products, setProducts] = useState<Product[]>([]);
@@ -246,6 +252,47 @@ export default function CotizacionesPage() {
 
     const isExpired = (dateStr: string) => new Date(dateStr) < new Date();
 
+    // Ver detalle de cotización
+    const viewQuotation = async (id: string) => {
+        setLoadingDetail(true);
+        try {
+            const res = await fetch(`/api/quotations/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedQuotation(data);
+                setShowDetail(true);
+            }
+        } catch (error) {
+            console.error("Error fetching quotation:", error);
+        } finally {
+            setLoadingDetail(false);
+        }
+    };
+
+    // Imprimir cotización
+    const printQuotation = async (id: string) => {
+        setPrinting(true);
+        try {
+            const res = await fetch(`/api/quotations/${id}/pdf`);
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const printWindow = window.open(url, '_blank');
+                if (printWindow) {
+                    printWindow.onload = () => {
+                        printWindow.print();
+                    };
+                }
+            } else {
+                alert("Error al generar PDF");
+            }
+        } catch (error) {
+            console.error("Error printing quotation:", error);
+            alert("Error al imprimir cotización");
+        } finally {
+            setPrinting(false);
+        }
+    };
     return (
         <div className="flex min-h-screen bg-background">
             {/* Sidebar */}
@@ -380,10 +427,22 @@ export default function CotizacionesPage() {
                                                     <TableCell>{formatDate(q.createdAt)}</TableCell>
                                                     <TableCell>
                                                         <div className="flex gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                onClick={() => viewQuotation(q.id)}
+                                                                disabled={loadingDetail}
+                                                            >
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                onClick={() => printQuotation(q.id)}
+                                                                disabled={printing}
+                                                            >
                                                                 <Printer className="h-4 w-4" />
                                                             </Button>
                                                         </div>
@@ -517,6 +576,93 @@ export default function CotizacionesPage() {
                                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crear Cotización"}
                                 </Button>
                             </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Modal Detalle de Cotización */}
+            {showDetail && selectedQuotation && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <Card className="w-[600px] max-h-[90vh] overflow-y-auto">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileEdit className="h-5 w-5" />
+                                    Cotización {selectedQuotation.number}
+                                </CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {formatDate(selectedQuotation.createdAt)} • Válida hasta {formatDate(selectedQuotation.validUntil)}
+                                </p>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setShowDetail(false)}>
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {/* Cliente */}
+                            <div className="p-3 bg-muted rounded-lg">
+                                <p className="text-sm text-muted-foreground">Cliente</p>
+                                <p className="font-medium">
+                                    {selectedQuotation.client?.name || "Sin cliente asignado"}
+                                </p>
+                                {selectedQuotation.client?.document && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {selectedQuotation.client.document}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Items */}
+                            <div>
+                                <p className="text-sm font-medium mb-2">Items</p>
+                                <div className="border rounded-lg divide-y">
+                                    {selectedQuotation.items?.map((item, idx) => (
+                                        <div key={idx} className="p-3 flex justify-between">
+                                            <div>
+                                                <p className="font-medium">{item.productName}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {item.quantity} x S/ {item.unitPrice.toFixed(2)}
+                                                </p>
+                                            </div>
+                                            <p className="font-bold">S/ {item.subtotal.toFixed(2)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Totales */}
+                            <div className="bg-muted p-4 rounded-lg space-y-1">
+                                <div className="flex justify-between text-sm">
+                                    <span>Subtotal</span>
+                                    <span>S/ {selectedQuotation.subtotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span>IGV (18%)</span>
+                                    <span>S/ {selectedQuotation.tax.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                                    <span>Total</span>
+                                    <span>S/ {selectedQuotation.total.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {/* Botón Imprimir */}
+                            <Button
+                                className="w-full"
+                                onClick={() => {
+                                    setShowDetail(false);
+                                    printQuotation(selectedQuotation.id);
+                                }}
+                                disabled={printing}
+                            >
+                                {printing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : (
+                                    <Printer className="h-4 w-4 mr-2" />
+                                )}
+                                Imprimir Cotización
+                            </Button>
                         </CardContent>
                     </Card>
                 </div>
