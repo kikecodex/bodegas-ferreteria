@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const expectedAmount = activeCash.openingAmount + cashSales;
+        const totalSales = Object.values(salesByMethod).reduce((a, b) => a + b, 0);
+        const expectedAmount = activeCash.openingAmount + totalSales;
         const actualClosing = parseFloat(closingAmount) || 0;
         const difference = actualClosing - expectedAmount;
 

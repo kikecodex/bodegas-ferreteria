@@ -83,7 +83,7 @@ export async function GET() {
                 openingAmount: activeCash.openingAmount,
                 totalSales,
                 salesByMethod,
-                expectedAmount: activeCash.openingAmount + (salesByMethod["EFECTIVO"] || 0),
+                expectedAmount: activeCash.openingAmount + totalSales,
                 salesCount
             }
         });
