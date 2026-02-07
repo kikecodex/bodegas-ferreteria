@@ -23,7 +23,8 @@ import {
     Mail,
     MapPin,
     Edit,
-    Building2
+    Building2,
+    CreditCard
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -43,6 +44,7 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas" },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Truck, label: "Proveedores", href: "/proveedores", active: true },
     { icon: Box, label: "Compras", href: "/compras" },

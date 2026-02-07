@@ -23,7 +23,8 @@ import {
     Loader2,
     Trash2,
     X,
-    Check
+    Check,
+    CreditCard
 } from "lucide-react";
 
 interface Supplier {
@@ -53,6 +54,7 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas" },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Truck, label: "Proveedores", href: "/proveedores" },
     { icon: Box, label: "Compras", href: "/compras", active: true },

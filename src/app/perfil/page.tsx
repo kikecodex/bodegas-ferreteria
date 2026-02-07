@@ -23,7 +23,8 @@ import {
     EyeOff,
     Loader2,
     ArrowLeft,
-    Check
+    Check,
+    CreditCard
 } from "lucide-react";
 
 interface UserInfo {
@@ -38,6 +39,7 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas" },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Truck, label: "Proveedores", href: "/proveedores" },
     { icon: Box, label: "Compras", href: "/compras" },

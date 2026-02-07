@@ -40,7 +40,8 @@ import {
     ArrowDownCircle,
     History,
     Loader2,
-    AlertTriangle
+    AlertTriangle,
+    CreditCard
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -74,6 +75,7 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas" },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Box, label: "Inventario", href: "/inventario", active: true },
     { icon: Receipt, label: "Facturas", href: "/facturas" },
@@ -222,8 +224,8 @@ export default function InventarioPage() {
                                 key={item.label}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
-                                        ? "bg-red-600 text-white"
-                                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                    ? "bg-red-600 text-white"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                     }`}
                             >
                                 <Icon className="h-5 w-5" />

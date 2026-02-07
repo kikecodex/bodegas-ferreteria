@@ -44,12 +44,12 @@ export async function GET(request: NextRequest) {
         if (dateFrom || dateTo) {
             where.createdAt = {};
             if (dateFrom) {
-                // Forzar inicio del día en hora local
-                (where.createdAt as Record<string, unknown>).gte = new Date(dateFrom + 'T00:00:00');
+                // Forzar inicio del día en hora local de Perú (UTC-5)
+                (where.createdAt as Record<string, unknown>).gte = new Date(dateFrom + 'T00:00:00-05:00');
             }
             if (dateTo) {
-                // Forzar fin del día en hora local
-                (where.createdAt as Record<string, unknown>).lte = new Date(dateTo + 'T23:59:59.999');
+                // Forzar fin del día en hora local de Perú (UTC-5)
+                (where.createdAt as Record<string, unknown>).lte = new Date(dateTo + 'T23:59:59.999-05:00');
             }
         }
 

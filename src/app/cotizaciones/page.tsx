@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { calculateTaxes } from "@/lib/tax-utils";
+import { ClientSelector } from "@/components/ClientSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +30,8 @@ import {
     Clock,
     ArrowRightCircle,
     X,
-    Minus
+    Minus,
+    CreditCard
 } from "lucide-react";
 import {
     Table,
@@ -76,6 +78,7 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas" },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Truck, label: "Proveedores", href: "/proveedores" },
     { icon: Box, label: "Compras", href: "/compras" },
@@ -113,6 +116,10 @@ export default function CotizacionesPage() {
     const [notes, setNotes] = useState("");
     const [saving, setSaving] = useState(false);
     const [searchingProducts, setSearchingProducts] = useState(false);
+
+    // Client selector
+    const [showClientSelector, setShowClientSelector] = useState(false);
+    const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; document: string; documentType: string } | null>(null);
 
     const fetchQuotations = useCallback(async () => {
         setLoading(true);
@@ -216,6 +223,7 @@ export default function CotizacionesPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    clientId: selectedClient?.id || null,
                     items: cart.map(i => ({
                         productId: i.productId,
                         quantity: i.quantity,
@@ -230,6 +238,7 @@ export default function CotizacionesPage() {
                 setShowForm(false);
                 setCart([]);
                 setNotes("");
+                setSelectedClient(null);
                 fetchQuotations();
             } else {
                 const data = await res.json();
@@ -469,6 +478,36 @@ export default function CotizacionesPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            {/* Seleccionar Cliente */}
+                            <div>
+                                <label className="text-sm font-medium">Cliente</label>
+                                {selectedClient ? (
+                                    <div className="flex items-center gap-2 p-3 border rounded-lg bg-green-50 dark:bg-green-900/20 mt-1">
+                                        <div className="flex-1">
+                                            <p className="font-medium text-sm">{selectedClient.name}</p>
+                                            <p className="text-xs text-muted-foreground">{selectedClient.documentType}: {selectedClient.document}</p>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-red-500"
+                                            onClick={() => setSelectedClient(null)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full mt-1 border-dashed"
+                                        onClick={() => setShowClientSelector(true)}
+                                    >
+                                        <Search className="h-4 w-4 mr-2" />
+                                        Buscar cliente por RUC, DNI o nombre...
+                                    </Button>
+                                )}
+                            </div>
+
                             {/* Buscar productos */}
                             <div>
                                 <label className="text-sm font-medium">Agregar Productos</label>
@@ -569,7 +608,7 @@ export default function CotizacionesPage() {
 
                             {/* Botones */}
                             <div className="flex gap-2">
-                                <Button variant="outline" className="flex-1" onClick={() => { setShowForm(false); setCart([]); }}>
+                                <Button variant="outline" className="flex-1" onClick={() => { setShowForm(false); setCart([]); setSelectedClient(null); }}>
                                     Cancelar
                                 </Button>
                                 <Button className="flex-1" onClick={handleSubmit} disabled={saving || cart.length === 0}>
@@ -580,6 +619,21 @@ export default function CotizacionesPage() {
                     </Card>
                 </div>
             )}
+
+            {/* Client Selector Modal */}
+            <ClientSelector
+                isOpen={showClientSelector}
+                onClose={() => setShowClientSelector(false)}
+                onSelect={(client) => {
+                    setSelectedClient({
+                        id: client.id,
+                        name: client.name,
+                        document: client.document,
+                        documentType: client.documentType
+                    });
+                    setShowClientSelector(false);
+                }}
+            />
 
             {/* Modal Detalle de Cotización */}
             {showDetail && selectedQuotation && (

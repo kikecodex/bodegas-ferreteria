@@ -31,11 +31,13 @@ export async function GET() {
         }
 
         // Calcular ventas desde la apertura de caja (filtrado por tenant)
+        // Excluir ventas a crédito - no representan ingreso en caja
         const sales = await prisma.sale.findMany({
             where: {
                 createdAt: { gte: activeCash.openedAt },
                 status: "COMPLETADA",
-                tenantId: tenant.tenantId
+                tenantId: tenant.tenantId,
+                paymentMethod: { not: "CREDITO" }
             },
             select: {
                 total: true,

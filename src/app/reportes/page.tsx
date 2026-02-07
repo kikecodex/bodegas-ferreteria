@@ -23,7 +23,8 @@ import {
     RefreshCw,
     Loader2,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    CreditCard
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -64,6 +65,7 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas" },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Box, label: "Inventario", href: "/inventario" },
     { icon: Receipt, label: "Facturas", href: "/facturas" },
@@ -94,38 +96,50 @@ export default function ReportesPage() {
             const salesData = salesRes.ok ? await salesRes.json() : { sales: [] };
             const sales = salesData.sales || [];
 
-            // Calcular fechas (hora local)
+            // Helper: obtener fecha YYYY-MM-DD en zona horaria de Perú
+            // Esto garantiza que funcione correctamente sin importar la zona del servidor
+            const getPeruDateStr = (date: Date): string => {
+                return date.toLocaleDateString('en-CA', { timeZone: 'America/Lima' }); // formato YYYY-MM-DD
+            };
+
+            // Calcular fecha de "hoy" en Perú
             const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const weekAgo = new Date(today);
+            const todayStr = getPeruDateStr(now); // ej: "2026-02-06"
+
+            // Calcular ayer
+            const yesterdayDate = new Date(now);
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            const yesterdayStr = getPeruDateStr(yesterdayDate);
+
+            // Rango de semana y mes usando timestamps con offset Perú explícito
+            const weekAgo = new Date(todayStr + 'T00:00:00-05:00');
             weekAgo.setDate(weekAgo.getDate() - 7);
-            const monthAgo = new Date(today);
+            const monthAgo = new Date(todayStr + 'T00:00:00-05:00');
             monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+            // Obtener la fecha Perú de cada venta para comparar
+            const getSaleDateStr = (createdAt: string) => getPeruDateStr(new Date(createdAt));
 
             // Filtrar ventas por período (excluir ventas a crédito - esas se manejan aparte)
             const ventasHoy = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
-                const saleDate = new Date(s.createdAt);
-                return saleDate >= today && saleDate < tomorrow &&
+                return getSaleDateStr(s.createdAt) === todayStr &&
                     s.status === "COMPLETADA" &&
                     s.paymentMethod !== "CREDITO";
             });
             const ventasAyer = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
-                const date = new Date(s.createdAt);
-                return date >= yesterday && date < today &&
+                return getSaleDateStr(s.createdAt) === yesterdayStr &&
                     s.status === "COMPLETADA" &&
                     s.paymentMethod !== "CREDITO";
             });
             const ventasSemana = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) =>
                 new Date(s.createdAt) >= weekAgo &&
+                getSaleDateStr(s.createdAt) <= todayStr &&
                 s.status === "COMPLETADA" &&
                 s.paymentMethod !== "CREDITO"
             );
             const ventasMes = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) =>
                 new Date(s.createdAt) >= monthAgo &&
+                getSaleDateStr(s.createdAt) <= todayStr &&
                 s.status === "COMPLETADA" &&
                 s.paymentMethod !== "CREDITO"
             );
@@ -136,7 +150,7 @@ export default function ReportesPage() {
             const totalSemana = ventasSemana.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
             const totalMes = ventasMes.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
 
-            // Ventas por método de pago
+            // Ventas por método de pago (del mes)
             const ventasPorMetodo: Record<string, number> = {};
             ventasMes.forEach((v: { paymentMethod: string; total: number }) => {
                 ventasPorMetodo[v.paymentMethod] = (ventasPorMetodo[v.paymentMethod] || 0) + v.total;
@@ -146,11 +160,8 @@ export default function ReportesPage() {
             let ventasFechaSeleccionada: typeof ventasHoy = [];
             let totalFechaSeleccionada = 0;
             if (selectedDate) {
-                const selDate = new Date(selectedDate + 'T00:00:00');
-                const selDateEnd = new Date(selectedDate + 'T23:59:59');
                 ventasFechaSeleccionada = sales.filter((s: { createdAt: string; status: string }) => {
-                    const saleDate = new Date(s.createdAt);
-                    return saleDate >= selDate && saleDate <= selDateEnd && s.status === "COMPLETADA";
+                    return getSaleDateStr(s.createdAt) === selectedDate && s.status === "COMPLETADA";
                 });
                 totalFechaSeleccionada = ventasFechaSeleccionada.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
             }
@@ -191,7 +202,7 @@ export default function ReportesPage() {
                 },
                 clientes: {
                     total: clients.length,
-                    nuevosHoy: clients.filter((c: { createdAt: string }) => new Date(c.createdAt) >= today).length
+                    nuevosHoy: clients.filter((c: { createdAt: string }) => getSaleDateStr(c.createdAt) === todayStr).length
                 },
                 topProductos,
                 ventasPorMetodo

@@ -98,12 +98,21 @@ const navItems = [
     { icon: FileText, label: "Reportes", href: "/reportes" },
 ];
 
+// Helper: obtener fecha local como YYYY-MM-DD (evita bug de toISOString que usa UTC)
+function getLocalDateStr(date: Date = new Date()): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 export default function HistorialVentasPage() {
     const [sales, setSales] = useState<Sale[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
+    // Inicializar con fecha de hoy en hora LOCAL
+    const [dateFrom, setDateFrom] = useState(() => getLocalDateStr());
+    const [dateTo, setDateTo] = useState(() => getLocalDateStr());
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -553,10 +562,10 @@ export default function HistorialVentasPage() {
                             {/* Botones de filtro rápido por fecha */}
                             <div className="flex gap-2">
                                 <Button
-                                    variant={dateFrom === new Date().toISOString().split('T')[0] && dateTo === new Date().toISOString().split('T')[0] ? "default" : "outline"}
+                                    variant={dateFrom === getLocalDateStr() && dateTo === getLocalDateStr() ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => {
-                                        const today = new Date().toISOString().split('T')[0];
+                                        const today = getLocalDateStr();
                                         setDateFrom(today);
                                         setDateTo(today);
                                     }}
@@ -569,7 +578,7 @@ export default function HistorialVentasPage() {
                                     onClick={() => {
                                         const yesterday = new Date();
                                         yesterday.setDate(yesterday.getDate() - 1);
-                                        const yesterdayStr = yesterday.toISOString().split('T')[0];
+                                        const yesterdayStr = getLocalDateStr(yesterday);
                                         setDateFrom(yesterdayStr);
                                         setDateTo(yesterdayStr);
                                     }}
@@ -583,8 +592,8 @@ export default function HistorialVentasPage() {
                                         const today = new Date();
                                         const weekAgo = new Date();
                                         weekAgo.setDate(today.getDate() - 7);
-                                        setDateFrom(weekAgo.toISOString().split('T')[0]);
-                                        setDateTo(today.toISOString().split('T')[0]);
+                                        setDateFrom(getLocalDateStr(weekAgo));
+                                        setDateTo(getLocalDateStr(today));
                                     }}
                                 >
                                     Semana
@@ -596,8 +605,8 @@ export default function HistorialVentasPage() {
                                         const today = new Date();
                                         const monthAgo = new Date();
                                         monthAgo.setMonth(today.getMonth() - 1);
-                                        setDateFrom(monthAgo.toISOString().split('T')[0]);
-                                        setDateTo(today.toISOString().split('T')[0]);
+                                        setDateFrom(getLocalDateStr(monthAgo));
+                                        setDateTo(getLocalDateStr(today));
                                     }}
                                 >
                                     Mes
