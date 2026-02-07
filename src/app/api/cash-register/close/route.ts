@@ -48,6 +48,20 @@ export async function POST(request: NextRequest) {
             }
         });
 
+        // También incluir notas de venta (son transacciones reales con dinero)
+        const salesNotes = await prisma.salesNote.findMany({
+            where: {
+                createdAt: { gte: activeCash.openedAt },
+                status: "COMPLETADA",
+                tenantId: tenant.tenantId,
+                paymentMethod: { not: "CREDITO" }
+            },
+            select: {
+                total: true,
+                paymentMethod: true
+            }
+        });
+
         let cashSales = 0;
         const salesByMethod: Record<string, number> = {};
 
@@ -56,6 +70,14 @@ export async function POST(request: NextRequest) {
                 (salesByMethod[sale.paymentMethod] || 0) + sale.total;
             if (sale.paymentMethod === "EFECTIVO") {
                 cashSales += sale.total;
+            }
+        }
+
+        for (const note of salesNotes) {
+            salesByMethod[note.paymentMethod] =
+                (salesByMethod[note.paymentMethod] || 0) + note.total;
+            if (note.paymentMethod === "EFECTIVO") {
+                cashSales += note.total;
             }
         }
 
@@ -90,7 +112,7 @@ export async function POST(request: NextRequest) {
                 differenceType: difference > 0 ? "SOBRANTE" : difference < 0 ? "FALTANTE" : "CUADRADO",
                 salesByMethod,
                 totalSales: Object.values(salesByMethod).reduce((a, b) => a + b, 0),
-                salesCount: sales.length
+                salesCount: sales.length + salesNotes.length
             }
         });
     } catch (error) {

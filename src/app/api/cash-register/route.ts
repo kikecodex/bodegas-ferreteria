@@ -45,14 +45,35 @@ export async function GET() {
             }
         });
 
-        // Agrupar por método de pago
+        // También incluir notas de venta (son transacciones reales con dinero)
+        const salesNotes = await prisma.salesNote.findMany({
+            where: {
+                createdAt: { gte: activeCash.openedAt },
+                status: "COMPLETADA",
+                tenantId: tenant.tenantId,
+                paymentMethod: { not: "CREDITO" }
+            },
+            select: {
+                total: true,
+                paymentMethod: true
+            }
+        });
+
+        // Agrupar por método de pago (ventas + notas de venta)
         const salesByMethod: Record<string, number> = {};
         let totalSales = 0;
+        let salesCount = sales.length + salesNotes.length;
 
         for (const sale of sales) {
             salesByMethod[sale.paymentMethod] =
                 (salesByMethod[sale.paymentMethod] || 0) + sale.total;
             totalSales += sale.total;
+        }
+
+        for (const note of salesNotes) {
+            salesByMethod[note.paymentMethod] =
+                (salesByMethod[note.paymentMethod] || 0) + note.total;
+            totalSales += note.total;
         }
 
         return NextResponse.json({
@@ -63,7 +84,7 @@ export async function GET() {
                 totalSales,
                 salesByMethod,
                 expectedAmount: activeCash.openingAmount + (salesByMethod["EFECTIVO"] || 0),
-                salesCount: sales.length
+                salesCount
             }
         });
     } catch (error) {
