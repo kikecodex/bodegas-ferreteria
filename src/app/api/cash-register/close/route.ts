@@ -33,11 +33,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Calcular ventas en efectivo (filtrado por tenant)
+        // Calcular inicio del día en Perú (medianoche) para coincidir con reportes
+        const now = new Date();
+        const peruDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        const startOfToday = new Date(peruDateStr + 'T00:00:00-05:00');
+
+        // Calcular ventas del día de hoy (filtrado por tenant)
         // Excluir ventas a crédito - no representan ingreso en caja
         const sales = await prisma.sale.findMany({
             where: {
-                createdAt: { gte: activeCash.openedAt },
+                createdAt: { gte: startOfToday },
                 status: "COMPLETADA",
                 tenantId: tenant.tenantId,
                 paymentMethod: { not: "CREDITO" }
