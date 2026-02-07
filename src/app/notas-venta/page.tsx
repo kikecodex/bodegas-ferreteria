@@ -28,7 +28,8 @@ import {
     Minus,
     DollarSign,
     Check,
-    CreditCard
+    CreditCard,
+    Trash2
 } from "lucide-react";
 import {
     Table,
@@ -313,6 +314,22 @@ export default function NotasVentaPage() {
             setPrinting(false);
         }
     };
+
+    // Eliminar nota de venta
+    const deleteNote = async (note: SalesNote) => {
+        if (!confirm(`¿Eliminar la nota ${note.number}? Se revertirá el stock. Esta acción no se puede deshacer.`)) return;
+        try {
+            const res = await fetch(`/api/sales-notes/${note.id}`, { method: "DELETE" });
+            if (res.ok) {
+                fetchSalesNotes();
+            } else {
+                alert("Error al eliminar nota de venta");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Error al eliminar");
+        }
+    };
     return (
         <div className="flex min-h-screen bg-background">
             {/* Sidebar */}
@@ -442,6 +459,14 @@ export default function NotasVentaPage() {
                                                             disabled={printing}
                                                         >
                                                             <Printer className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => deleteNote(note)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </div>
                                                 </TableCell>

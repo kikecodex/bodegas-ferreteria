@@ -57,3 +57,62 @@ export async function GET(
         );
     }
 }
+
+// DELETE /api/sales-notes/[id] - Eliminar nota de venta
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const tenant = await getTenantFromSession();
+        if (!tenant) {
+            return NextResponse.json(
+                { error: "No autenticado" },
+                { status: 401 }
+            );
+        }
+
+        const { id } = await params;
+
+        const note = await prisma.salesNote.findFirst({
+            where: { id, tenantId: tenant.tenantId },
+            include: { items: true }
+        });
+
+        if (!note) {
+            return NextResponse.json(
+                { error: "Nota de venta no encontrada" },
+                { status: 404 }
+            );
+        }
+
+        // Transacción: revertir stock + eliminar items + eliminar nota
+        await prisma.$transaction(async (tx) => {
+            // Revertir stock
+            for (const item of note.items) {
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { stock: { increment: item.quantity } }
+                });
+            }
+
+            // Eliminar items
+            await tx.salesNoteItem.deleteMany({
+                where: { salesNoteId: id }
+            });
+
+            // Eliminar nota
+            await tx.salesNote.delete({
+                where: { id }
+            });
+        });
+
+        return NextResponse.json({ message: "Nota de venta eliminada correctamente" });
+    } catch (error) {
+        console.error("Error deleting sales note:", error);
+        return NextResponse.json(
+            { error: "Error al eliminar nota de venta" },
+            { status: 500 }
+        );
+    }
+}
