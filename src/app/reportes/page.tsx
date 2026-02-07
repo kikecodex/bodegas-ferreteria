@@ -150,9 +150,9 @@ export default function ReportesPage() {
             const totalSemana = ventasSemana.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
             const totalMes = ventasMes.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
 
-            // Ventas por método de pago (del mes)
+            // Ventas por método de pago (del día)
             const ventasPorMetodo: Record<string, number> = {};
-            ventasMes.forEach((v: { paymentMethod: string; total: number }) => {
+            ventasHoy.forEach((v: { paymentMethod: string; total: number }) => {
                 ventasPorMetodo[v.paymentMethod] = (ventasPorMetodo[v.paymentMethod] || 0) + v.total;
             });
 
