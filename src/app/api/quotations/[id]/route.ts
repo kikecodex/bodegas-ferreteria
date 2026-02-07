@@ -103,3 +103,47 @@ export async function PATCH(
         );
     }
 }
+
+// DELETE /api/quotations/[id] - Eliminar cotización
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const tenant = await getTenantFromSession();
+        if (!tenant) {
+            return NextResponse.json(
+                { error: "No autenticado" },
+                { status: 401 }
+            );
+        }
+
+        const { id } = await params;
+
+        // Verificar que existe y pertenece al tenant
+        const quotation = await prisma.quotation.findFirst({
+            where: { id, tenantId: tenant.tenantId }
+        });
+
+        if (!quotation) {
+            return NextResponse.json(
+                { error: "Cotización no encontrada" },
+                { status: 404 }
+            );
+        }
+
+        // Eliminar en transacción (items + cotización)
+        await prisma.$transaction(async (tx) => {
+            await tx.quotationItem.deleteMany({ where: { quotationId: id } });
+            await tx.quotation.delete({ where: { id } });
+        });
+
+        return NextResponse.json({ message: "Cotización eliminada correctamente" });
+    } catch (error) {
+        console.error("Error deleting quotation:", error);
+        return NextResponse.json(
+            { error: "Error al eliminar cotización" },
+            { status: 500 }
+        );
+    }
+}

@@ -35,7 +35,8 @@ import {
     CheckCircle,
     DollarSign,
     CreditCard,
-    AlertCircle
+    AlertCircle,
+    Trash2
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -153,6 +154,22 @@ export default function CreditosPage() {
             alert("Error al procesar el pago");
         } finally {
             setProcessing(false);
+        }
+    };
+
+    // Eliminar crédito
+    const deleteCredito = async (credito: Sale) => {
+        if (!confirm(`¿Eliminar el crédito ${credito.number}? Se revertirá el stock. Esta acción no se puede deshacer.`)) return;
+        try {
+            const res = await fetch(`/api/sales/${credito.id}`, { method: "DELETE" });
+            if (res.ok) {
+                fetchCreditos();
+            } else {
+                alert("Error al eliminar crédito");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Error al eliminar crédito");
         }
     };
 
@@ -345,6 +362,14 @@ export default function CreditosPage() {
                                                                     }}
                                                                 >
                                                                     <DollarSign className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-red-500 hover:text-red-700"
+                                                                    onClick={() => deleteCredito(credito)}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </div>
                                                         </TableCell>

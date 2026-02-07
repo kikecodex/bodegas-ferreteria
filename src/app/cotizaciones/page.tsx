@@ -31,7 +31,8 @@ import {
     ArrowRightCircle,
     X,
     Minus,
-    CreditCard
+    CreditCard,
+    Trash2
 } from "lucide-react";
 import {
     Table,
@@ -261,6 +262,22 @@ export default function CotizacionesPage() {
 
     const isExpired = (dateStr: string) => new Date(dateStr) < new Date();
 
+    // Eliminar cotización
+    const deleteQuotation = async (id: string, number: string) => {
+        if (!confirm(`¿Eliminar la cotización ${number}? Esta acción no se puede deshacer.`)) return;
+        try {
+            const res = await fetch(`/api/quotations/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                fetchQuotations();
+            } else {
+                alert("Error al eliminar cotización");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Error al eliminar cotización");
+        }
+    };
+
     // Ver detalle de cotización
     const viewQuotation = async (id: string) => {
         setLoadingDetail(true);
@@ -453,6 +470,14 @@ export default function CotizacionesPage() {
                                                                 disabled={printing}
                                                             >
                                                                 <Printer className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-red-500 hover:text-red-700"
+                                                                onClick={() => deleteQuotation(q.id, q.number)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </div>
                                                     </TableCell>

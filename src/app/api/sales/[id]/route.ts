@@ -173,3 +173,62 @@ export async function PUT(
         );
     }
 }
+
+// DELETE /api/sales/[id] - Eliminar venta (crédito de prueba, etc.)
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const tenant = await getTenantFromSession();
+        if (!tenant) {
+            return NextResponse.json(
+                { error: "No autenticado" },
+                { status: 401 }
+            );
+        }
+
+        const { id } = await params;
+
+        const sale = await prisma.sale.findFirst({
+            where: { id, tenantId: tenant.tenantId },
+            include: { items: true }
+        });
+
+        if (!sale) {
+            return NextResponse.json(
+                { error: "Venta no encontrada" },
+                { status: 404 }
+            );
+        }
+
+        // Eliminar en transacción: reversar stock + eliminar items + eliminar venta
+        await prisma.$transaction(async (tx) => {
+            // Reversar stock si la venta no estaba anulada
+            if (sale.status !== "ANULADA") {
+                for (const item of sale.items) {
+                    const product = await tx.product.findUnique({
+                        where: { id: item.productId }
+                    });
+                    if (product) {
+                        await tx.product.update({
+                            where: { id: item.productId },
+                            data: { stock: product.stock + item.quantity }
+                        });
+                    }
+                }
+            }
+
+            await tx.saleItem.deleteMany({ where: { saleId: id } });
+            await tx.sale.delete({ where: { id } });
+        });
+
+        return NextResponse.json({ message: "Venta eliminada correctamente" });
+    } catch (error) {
+        console.error("Error deleting sale:", error);
+        return NextResponse.json(
+            { error: "Error al eliminar venta" },
+            { status: 500 }
+        );
+    }
+}
