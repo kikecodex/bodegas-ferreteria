@@ -48,40 +48,15 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // También incluir notas de venta (son transacciones reales con dinero)
-        const salesNotes = await prisma.salesNote.findMany({
-            where: {
-                createdAt: { gte: activeCash.openedAt },
-                status: "COMPLETADA",
-                tenantId: tenant.tenantId,
-                paymentMethod: { not: "CREDITO" }
-            },
-            select: {
-                total: true,
-                paymentMethod: true
-            }
-        });
-
-        let cashSales = 0;
         const salesByMethod: Record<string, number> = {};
+        let totalSales = 0;
 
         for (const sale of sales) {
             salesByMethod[sale.paymentMethod] =
                 (salesByMethod[sale.paymentMethod] || 0) + sale.total;
-            if (sale.paymentMethod === "EFECTIVO") {
-                cashSales += sale.total;
-            }
+            totalSales += sale.total;
         }
 
-        for (const note of salesNotes) {
-            salesByMethod[note.paymentMethod] =
-                (salesByMethod[note.paymentMethod] || 0) + note.total;
-            if (note.paymentMethod === "EFECTIVO") {
-                cashSales += note.total;
-            }
-        }
-
-        const totalSales = Object.values(salesByMethod).reduce((a, b) => a + b, 0);
         const expectedAmount = activeCash.openingAmount + totalSales;
         const actualClosing = parseFloat(closingAmount) || 0;
         const difference = actualClosing - expectedAmount;
@@ -106,14 +81,14 @@ export async function POST(request: NextRequest) {
             cashRegister: closedCash,
             summary: {
                 openingAmount: activeCash.openingAmount,
-                cashSales,
+                cashSales: salesByMethod["EFECTIVO"] || 0,
                 expectedAmount,
                 closingAmount: actualClosing,
                 difference,
                 differenceType: difference > 0 ? "SOBRANTE" : difference < 0 ? "FALTANTE" : "CUADRADO",
                 salesByMethod,
-                totalSales: Object.values(salesByMethod).reduce((a, b) => a + b, 0),
-                salesCount: sales.length + salesNotes.length
+                totalSales,
+                salesCount: sales.length
             }
         });
     } catch (error) {

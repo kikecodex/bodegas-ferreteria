@@ -156,16 +156,6 @@ export default function ReportesPage() {
                 ventasPorMetodo[v.paymentMethod] = (ventasPorMetodo[v.paymentMethod] || 0) + v.total;
             });
 
-            // DEBUG: verificar datos de fecha y filtro
-            console.log("[REPORTES DEBUG]", {
-                todayStr,
-                totalSalesFromAPI: sales.length,
-                ventasHoyCount: ventasHoy.length,
-                ventasPorMetodo,
-                primerVentaHoy: ventasHoy[0] ? { createdAt: ventasHoy[0].createdAt, dateStr: getSaleDateStr(ventasHoy[0].createdAt) } : null,
-                ultimaVentaHoy: ventasHoy[ventasHoy.length - 1] ? { createdAt: ventasHoy[ventasHoy.length - 1].createdAt, dateStr: getSaleDateStr(ventasHoy[ventasHoy.length - 1].createdAt) } : null
-            });
-
             // Si hay fecha específica seleccionada, calcular ventas de ese día
             let ventasFechaSeleccionada: typeof ventasHoy = [];
             let totalFechaSeleccionada = 0;
