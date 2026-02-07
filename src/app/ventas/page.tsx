@@ -17,7 +17,10 @@ import {
     DollarSign,
     History,
     LockOpen,
-    Lock
+    Lock,
+    CreditCard,
+    Truck,
+    FileEdit
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { POSInterface } from "@/components/POSInterface";
@@ -27,9 +30,12 @@ const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
     { icon: ShoppingCart, label: "Ventas", href: "/ventas", active: true },
+    { icon: CreditCard, label: "Créditos", href: "/creditos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
-    { icon: Box, label: "Inventario", href: "/inventario" },
-    { icon: Receipt, label: "Facturas", href: "/facturas" },
+    { icon: Truck, label: "Proveedores", href: "/proveedores" },
+    { icon: Box, label: "Compras", href: "/compras" },
+    { icon: FileEdit, label: "Cotizaciones", href: "/cotizaciones" },
+    { icon: Receipt, label: "Notas de Venta", href: "/notas-venta" },
     { icon: FileText, label: "Reportes", href: "/reportes" },
 ];
 

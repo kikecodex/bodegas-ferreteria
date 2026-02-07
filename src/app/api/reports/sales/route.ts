@@ -17,36 +17,50 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const period = searchParams.get("period") || "day"; // day, week, month, year
 
-        // Calcular fecha de inicio según período
+        // Usar timezone de Perú (UTC-5) para calcular fechas correctamente
         const now = new Date();
+        const peruDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' }); // YYYY-MM-DD
         let startDate: Date;
 
         switch (period) {
             case "day":
-                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                startDate = new Date(peruDateStr + 'T00:00:00-05:00');
                 break;
-            case "week":
-                const dayOfWeek = now.getDay();
-                startDate = new Date(now);
-                startDate.setDate(now.getDate() - dayOfWeek);
+            case "week": {
+                const peruNow = new Date(peruDateStr + 'T12:00:00-05:00');
+                const dayOfWeek = peruNow.getDay();
+                startDate = new Date(peruNow);
+                startDate.setDate(peruNow.getDate() - dayOfWeek);
                 startDate.setHours(0, 0, 0, 0);
+                // Reconstruct with Peru offset
+                const weekStartStr = startDate.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+                startDate = new Date(weekStartStr + 'T00:00:00-05:00');
                 break;
-            case "month":
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+            case "month": {
+                const [y, m] = peruDateStr.split('-');
+                startDate = new Date(`${y}-${m}-01T00:00:00-05:00`);
                 break;
-            case "year":
-                startDate = new Date(now.getFullYear(), 0, 1);
+            }
+            case "year": {
+                const year = peruDateStr.split('-')[0];
+                startDate = new Date(`${year}-01-01T00:00:00-05:00`);
                 break;
+            }
             default:
-                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                startDate = new Date(peruDateStr + 'T00:00:00-05:00');
         }
 
-        // Obtener ventas del período (filtrado por tenant)
+        // Fin del día de hoy en Perú
+        const endOfToday = new Date(peruDateStr + 'T23:59:59.999-05:00');
+
+        // Obtener ventas del período (filtrado por tenant, excluir créditos)
         const sales = await prisma.sale.findMany({
             where: {
-                createdAt: { gte: startDate },
+                createdAt: { gte: startDate, lte: endOfToday },
                 status: "COMPLETADA",
-                tenantId: tenant.tenantId
+                tenantId: tenant.tenantId,
+                paymentMethod: { not: "CREDITO" }
             },
             select: {
                 id: true,
@@ -81,37 +95,43 @@ export async function GET(request: NextRequest) {
         }
 
         // Obtener totales de otros períodos para comparación (filtrado por tenant)
+        const todayStart = new Date(peruDateStr + 'T00:00:00-05:00');
+        const [y, m] = peruDateStr.split('-');
+        const peruNowForWeek = new Date(peruDateStr + 'T12:00:00-05:00');
+        const dow = peruNowForWeek.getDay();
+        const weekStartDate = new Date(peruNowForWeek);
+        weekStartDate.setDate(peruNowForWeek.getDate() - dow);
+        const weekStartStr = weekStartDate.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        const weekStart = new Date(weekStartStr + 'T00:00:00-05:00');
+        const monthStart = new Date(`${y}-${m}-01T00:00:00-05:00`);
+
         const [totalHoy, totalSemana, totalMes] = await Promise.all([
             prisma.sale.aggregate({
                 where: {
-                    createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
+                    createdAt: { gte: todayStart, lte: endOfToday },
                     status: "COMPLETADA",
-                    tenantId: tenant.tenantId
+                    tenantId: tenant.tenantId,
+                    paymentMethod: { not: "CREDITO" }
                 },
                 _sum: { total: true },
                 _count: true
             }),
             prisma.sale.aggregate({
                 where: {
-                    createdAt: {
-                        gte: (() => {
-                            const d = new Date(now);
-                            d.setDate(now.getDate() - now.getDay());
-                            d.setHours(0, 0, 0, 0);
-                            return d;
-                        })()
-                    },
+                    createdAt: { gte: weekStart, lte: endOfToday },
                     status: "COMPLETADA",
-                    tenantId: tenant.tenantId
+                    tenantId: tenant.tenantId,
+                    paymentMethod: { not: "CREDITO" }
                 },
                 _sum: { total: true },
                 _count: true
             }),
             prisma.sale.aggregate({
                 where: {
-                    createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) },
+                    createdAt: { gte: monthStart, lte: endOfToday },
                     status: "COMPLETADA",
-                    tenantId: tenant.tenantId
+                    tenantId: tenant.tenantId,
+                    paymentMethod: { not: "CREDITO" }
                 },
                 _sum: { total: true },
                 _count: true

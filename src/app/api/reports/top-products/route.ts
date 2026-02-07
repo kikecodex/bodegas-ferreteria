@@ -18,27 +18,38 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get("limit") || "10");
         const period = searchParams.get("period") || "month";
 
-        // Calcular fecha según período
+        // Usar timezone de Perú (UTC-5) para calcular fechas correctamente
         const now = new Date();
+        const peruDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' }); // YYYY-MM-DD
         let startDate: Date;
 
         switch (period) {
             case "day":
-                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                startDate = new Date(peruDateStr + 'T00:00:00-05:00');
                 break;
-            case "week":
-                startDate = new Date(now);
-                startDate.setDate(now.getDate() - now.getDay());
-                startDate.setHours(0, 0, 0, 0);
+            case "week": {
+                const peruNow = new Date(peruDateStr + 'T12:00:00-05:00');
+                const dayOfWeek = peruNow.getDay();
+                startDate = new Date(peruNow);
+                startDate.setDate(peruNow.getDate() - dayOfWeek);
+                const weekStartStr = startDate.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+                startDate = new Date(weekStartStr + 'T00:00:00-05:00');
                 break;
-            case "month":
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+            case "month": {
+                const [y, m] = peruDateStr.split('-');
+                startDate = new Date(`${y}-${m}-01T00:00:00-05:00`);
                 break;
-            case "year":
-                startDate = new Date(now.getFullYear(), 0, 1);
+            }
+            case "year": {
+                const year = peruDateStr.split('-')[0];
+                startDate = new Date(`${year}-01-01T00:00:00-05:00`);
                 break;
-            default:
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+            default: {
+                const [y, m] = peruDateStr.split('-');
+                startDate = new Date(`${y}-${m}-01T00:00:00-05:00`);
+            }
         }
 
         // Obtener items de ventas agrupados por producto (filtrado por tenant)
