@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,9 @@ import {
     AlertTriangle,
     CreditCard,
     Truck,
-    FileEdit
+    FileEdit,
+    DollarSign,
+    TrendingUp
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -104,12 +106,11 @@ const navItems = [
     { icon: FileText, label: "Reportes", href: "/reportes" },
 ];
 
-// Helper: obtener fecha local como YYYY-MM-DD (evita bug de toISOString que usa UTC)
+// Helper: obtener fecha en zona horaria de Perú (UTC-5) como YYYY-MM-DD
+// Usa toLocaleDateString con timezone fijo para evitar que en servidores UTC
+// las ventas de madrugada (00:00-05:00 PET) caigan en el día anterior
 function getLocalDateStr(date: Date = new Date()): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return date.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
 }
 
 export default function HistorialVentasPage() {
@@ -671,6 +672,51 @@ export default function HistorialVentasPage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Resumen del día */}
+                    {!loading && sales.length > 0 && (() => {
+                        const ventasCompletadas = sales.filter(s => s.status === "COMPLETADA");
+                        const totalDia = ventasCompletadas.reduce((sum, s) => sum + s.total, 0);
+                        const cantidadVentas = ventasCompletadas.length;
+                        const promedio = cantidadVentas > 0 ? totalDia / cantidadVentas : 0;
+                        return (
+                            <div className="grid grid-cols-3 gap-4">
+                                <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-green-100">Total Ventas</p>
+                                                <p className="text-2xl font-bold">S/ {totalDia.toFixed(2)}</p>
+                                            </div>
+                                            <DollarSign className="h-8 w-8 text-green-200" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-blue-100">Cantidad de Ventas</p>
+                                                <p className="text-2xl font-bold">{cantidadVentas}</p>
+                                            </div>
+                                            <Receipt className="h-8 w-8 text-blue-200" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-amber-100">Promedio por Venta</p>
+                                                <p className="text-2xl font-bold">S/ {promedio.toFixed(2)}</p>
+                                            </div>
+                                            <TrendingUp className="h-8 w-8 text-amber-200" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        );
+                    })()}
 
                     {/* Tabla */}
                     <Card>

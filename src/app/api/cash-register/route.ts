@@ -14,6 +14,11 @@ export async function GET() {
             );
         }
 
+        // Calcular fecha de hoy en Perú
+        const now = new Date();
+        const peruDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        const startOfToday = new Date(peruDateStr + 'T00:00:00-05:00');
+
         // Buscar caja abierta (sin cerrar) del tenant
         const activeCash = await prisma.cashRegister.findFirst({
             where: {
@@ -30,10 +35,48 @@ export async function GET() {
             });
         }
 
-        // Calcular inicio del día en Perú (medianoche) para coincidir con reportes
-        const now = new Date();
-        const peruDateStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
-        const startOfToday = new Date(peruDateStr + 'T00:00:00-05:00');
+        // Verificar si la caja es de un día anterior (hora Perú)
+        const openedDate = activeCash.openedAt.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        if (openedDate !== peruDateStr) {
+            // Auto-cerrar caja del día anterior
+            // Calcular ventas del día en que se abrió la caja
+            const openedDayStart = new Date(openedDate + 'T00:00:00-05:00');
+            const openedDayEnd = new Date(openedDate + 'T23:59:59-05:00');
+
+            const oldSales = await prisma.sale.findMany({
+                where: {
+                    createdAt: { gte: openedDayStart, lte: openedDayEnd },
+                    status: "COMPLETADA",
+                    tenantId: tenant.tenantId,
+                    paymentMethod: { not: "CREDITO" }
+                },
+                select: { total: true }
+            });
+
+            const oldTotalSales = oldSales.reduce((sum, s) => sum + s.total, 0);
+            const expectedAmount = activeCash.openingAmount + oldTotalSales;
+
+            await prisma.cashRegister.update({
+                where: { id: activeCash.id },
+                data: {
+                    closedAt: now,
+                    closedBy: "auto-cierre",
+                    closingAmount: expectedAmount,
+                    expectedAmount,
+                    difference: 0,
+                    notes: (activeCash.notes ? activeCash.notes + "\n" : "") +
+                        `[AUTO-CIERRE] Caja del ${openedDate} cerrada automáticamente el ${peruDateStr} por no haberse cerrado a tiempo.`
+                }
+            });
+
+            return NextResponse.json({
+                isOpen: false,
+                autoClosedPrevious: true,
+                previousDate: openedDate,
+                previousOpeningAmount: activeCash.openingAmount,
+                message: `La caja del ${openedDate} no fue cerrada. Se cerró automáticamente. Por favor abra una nueva caja con el monto correcto de hoy.`
+            });
+        }
 
         // Calcular ventas del día de hoy (filtrado por tenant)
         // Excluir ventas a crédito - no representan ingreso en caja
