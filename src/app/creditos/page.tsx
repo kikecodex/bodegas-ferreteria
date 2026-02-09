@@ -36,8 +36,11 @@ import {
     DollarSign,
     CreditCard,
     AlertCircle,
-    Trash2
+    Trash2,
+    Banknote,
+    History
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Dialog,
@@ -61,6 +64,7 @@ interface Sale {
     createdAt: string;
     amountPaid: number;
     change: number;
+    notes?: string;
     client?: {
         id: string;
         name: string;
@@ -82,15 +86,34 @@ interface Sale {
     }>;
 }
 
+// Parsear historial de pagos desde las notas
+function parsePaymentHistory(notes?: string): Array<{ amount: number; method: string; date: string }> {
+    if (!notes) return [];
+    const payments: Array<{ amount: number; method: string; date: string }> = [];
+    const regex = /\[ABONO S\/ ([\d.]+) - ([^-]+) - (.+?)\]/g;
+    let match;
+    while ((match = regex.exec(notes)) !== null) {
+        payments.push({
+            amount: parseFloat(match[1]),
+            method: match[2].trim(),
+            date: match[3].trim()
+        });
+    }
+    return payments;
+}
+
 export default function CreditosPage() {
     const [loading, setLoading] = useState(true);
     const [creditos, setCreditos] = useState<Sale[]>([]);
     const [selectedCredito, setSelectedCredito] = useState<Sale | null>(null);
     const [showDetail, setShowDetail] = useState(false);
-    const [showPayDialog, setShowPayDialog] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [search, setSearch] = useState("");
     const [totalDeuda, setTotalDeuda] = useState(0);
+
+    // Estado de pago parcial
+    const [payAmount, setPayAmount] = useState("");
+    const [payMethod, setPayMethod] = useState("EFECTIVO");
 
     // Fetch créditos pendientes
     const fetchCreditos = useCallback(async () => {
@@ -132,22 +155,46 @@ export default function CreditosPage() {
         }
     };
 
-    // Marcar como pagado
-    const marcarPagado = async () => {
+    // Registrar pago (parcial o total)
+    const registrarPago = async (fullPayment = false) => {
         if (!selectedCredito) return;
+        const remaining = selectedCredito.total - (selectedCredito.amountPaid || 0);
+        const amount = fullPayment ? remaining : parseFloat(payAmount);
+
+        if (!amount || amount <= 0) {
+            alert("Ingrese un monto válido");
+            return;
+        }
+        if (amount > remaining + 0.01) {
+            alert(`El monto excede el saldo pendiente de S/ ${remaining.toFixed(2)}`);
+            return;
+        }
 
         setProcessing(true);
         try {
             const res = await fetch(`/api/sales/${selectedCredito.id}/pay`, {
-                method: "POST"
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount, method: payMethod })
             });
 
             if (res.ok) {
-                setShowPayDialog(false);
-                setShowDetail(false);
+                const data = await res.json();
+                // Refresh detail
+                const detailRes = await fetch(`/api/sales/${selectedCredito.id}`);
+                if (detailRes.ok) {
+                    const detailData = await detailRes.json();
+                    setSelectedCredito(detailData);
+                }
+                setPayAmount("");
                 fetchCreditos();
+                if (data.payment.isFullyPaid) {
+                    alert("¡Crédito pagado en su totalidad!");
+                    setShowDetail(false);
+                }
             } else {
-                alert("Error al marcar como pagado");
+                const err = await res.json();
+                alert(err.error || "Error al registrar pago");
             }
         } catch (error) {
             console.error("Error paying credit:", error);
@@ -195,7 +242,8 @@ export default function CreditosPage() {
             };
         }
         acc[clientName].creditos.push(c);
-        acc[clientName].totalDeuda += c.total;
+        const saldo = c.total - (c.amountPaid || 0);
+        acc[clientName].totalDeuda += saldo;
         return acc;
     }, {} as Record<string, { cliente: Sale['client']; creditos: Sale[]; totalDeuda: number }>);
 
@@ -324,57 +372,65 @@ export default function CreditosPage() {
                                                     <TableHead>Nº Venta</TableHead>
                                                     <TableHead>Fecha</TableHead>
                                                     <TableHead>Documento</TableHead>
-                                                    <TableHead className="text-right">Monto</TableHead>
+                                                    <TableHead className="text-right">Total</TableHead>
+                                                    <TableHead className="text-right">Pagado</TableHead>
+                                                    <TableHead className="text-right">Saldo</TableHead>
                                                     <TableHead className="text-center">Acciones</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {data.creditos.map((credito) => (
-                                                    <TableRow key={credito.id}>
-                                                        <TableCell className="font-medium">
-                                                            {credito.number}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {new Date(credito.createdAt).toLocaleDateString('es-PE')}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant="outline">{credito.documentType}</Badge>
-                                                        </TableCell>
-                                                        <TableCell className="text-right font-bold">
-                                                            S/ {credito.total.toFixed(2)}
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <div className="flex justify-center gap-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    onClick={() => viewCredito(credito)}
-                                                                >
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="text-green-600 hover:text-green-700"
-                                                                    onClick={() => {
-                                                                        setSelectedCredito(credito);
-                                                                        setShowPayDialog(true);
-                                                                    }}
-                                                                >
-                                                                    <DollarSign className="h-4 w-4" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="text-red-500 hover:text-red-700"
-                                                                    onClick={() => deleteCredito(credito)}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
+                                                {data.creditos.map((credito) => {
+                                                    const paid = credito.amountPaid || 0;
+                                                    const saldo = credito.total - paid;
+                                                    const pct = (paid / credito.total) * 100;
+                                                    return (
+                                                        <TableRow key={credito.id}>
+                                                            <TableCell className="font-medium">
+                                                                {credito.number}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {new Date(credito.createdAt).toLocaleDateString('es-PE')}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge variant="outline">{credito.documentType}</Badge>
+                                                            </TableCell>
+                                                            <TableCell className="text-right text-sm">
+                                                                S/ {credito.total.toFixed(2)}
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                {paid > 0 ? (
+                                                                    <span className="text-green-600 font-medium text-sm">S/ {paid.toFixed(2)}</span>
+                                                                ) : (
+                                                                    <span className="text-muted-foreground text-sm">—</span>
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell className="text-right font-bold text-amber-600">
+                                                                S/ {saldo.toFixed(2)}
+                                                            </TableCell>
+                                                            <TableCell className="text-center">
+                                                                <div className="flex justify-center gap-1">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        title="Ver detalle y pagos"
+                                                                        onClick={() => viewCredito(credito)}
+                                                                    >
+                                                                        <Eye className="h-4 w-4" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="text-red-500 hover:text-red-700"
+                                                                        title="Eliminar crédito"
+                                                                        onClick={() => deleteCredito(credito)}
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
                                             </TableBody>
                                         </Table>
                                     </CardContent>
@@ -385,99 +441,157 @@ export default function CreditosPage() {
                 </div>
             </main>
 
-            {/* Dialog de detalle */}
-            <Dialog open={showDetail} onOpenChange={setShowDetail}>
-                <DialogContent className="max-w-lg">
+            {/* Dialog de detalle con amortización */}
+            <Dialog open={showDetail} onOpenChange={(open) => { setShowDetail(open); if (!open) setPayAmount(""); }}>
+                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Detalle de Crédito {selectedCredito?.number}</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2">
+                            <CreditCard className="h-5 w-5" />
+                            Crédito {selectedCredito?.number}
+                        </DialogTitle>
                     </DialogHeader>
-                    {selectedCredito && (
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <p className="text-muted-foreground">Fecha</p>
-                                    <p className="font-medium">
-                                        {new Date(selectedCredito.createdAt).toLocaleString('es-PE')}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-muted-foreground">Cliente</p>
-                                    <p className="font-medium">
-                                        {selectedCredito.client?.name || "Cliente General"}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {selectedCredito.items && (
-                                <div>
-                                    <p className="text-muted-foreground text-sm mb-2">Items</p>
-                                    <div className="space-y-1">
-                                        {selectedCredito.items.map((item) => (
-                                            <div key={item.id} className="flex justify-between text-sm">
-                                                <span>{item.quantity} x {item.productName}</span>
-                                                <span>S/ {item.subtotal.toFixed(2)}</span>
-                                            </div>
-                                        ))}
+                    {selectedCredito && (() => {
+                        const paid = selectedCredito.amountPaid || 0;
+                        const remaining = selectedCredito.total - paid;
+                        const pct = paid > 0 ? Math.round((paid / selectedCredito.total) * 100) : 0;
+                        const payments = parsePaymentHistory(selectedCredito.notes);
+                        return (
+                            <div className="space-y-4">
+                                {/* Info del crédito */}
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="text-muted-foreground">Fecha</p>
+                                        <p className="font-medium">
+                                            {new Date(selectedCredito.createdAt).toLocaleString('es-PE')}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-muted-foreground">Cliente</p>
+                                        <p className="font-medium">
+                                            {selectedCredito.client?.name || "Cliente General"}
+                                        </p>
                                     </div>
                                 </div>
-                            )}
 
-                            <div className="border-t pt-4">
-                                <div className="flex justify-between text-lg font-bold">
-                                    <span>Total a Cobrar</span>
-                                    <span className="text-amber-600">S/ {selectedCredito.total.toFixed(2)}</span>
+                                {/* Items */}
+                                {selectedCredito.items && (
+                                    <div>
+                                        <p className="text-muted-foreground text-sm mb-2">Productos</p>
+                                        <div className="space-y-1 bg-muted/50 rounded-lg p-3">
+                                            {selectedCredito.items.map((item) => (
+                                                <div key={item.id} className="flex justify-between text-sm">
+                                                    <span>{item.quantity} x {item.productName}</span>
+                                                    <span>S/ {item.subtotal.toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Resumen financiero con barra de progreso */}
+                                <div className="border rounded-lg p-4 space-y-3">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Total del crédito</span>
+                                        <span className="font-medium">S/ {selectedCredito.total.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Total abonado</span>
+                                        <span className="font-medium text-green-600">S/ {paid.toFixed(2)}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-3">
+                                        <div
+                                            className={`h-3 rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct > 50 ? 'bg-blue-500' : 'bg-amber-500'}`}
+                                            style={{ width: `${Math.min(pct, 100)}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs text-muted-foreground">{pct}% pagado</span>
+                                        <span className="font-bold text-amber-600 text-lg">Saldo: S/ {remaining.toFixed(2)}</span>
+                                    </div>
                                 </div>
+
+                                {/* Historial de pagos */}
+                                {payments.length > 0 && (
+                                    <div>
+                                        <p className="text-sm font-medium flex items-center gap-1 mb-2">
+                                            <History className="h-4 w-4" />
+                                            Historial de Abonos
+                                        </p>
+                                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                                            {payments.map((p, i) => (
+                                                <div key={i} className="flex items-center justify-between text-sm bg-green-50 rounded-lg px-3 py-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                                                        <span className="text-muted-foreground text-xs">{p.date}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className="text-xs">{p.method}</Badge>
+                                                        <span className="font-medium text-green-700">S/ {p.amount.toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Formulario de pago */}
+                                {remaining > 0.01 && (
+                                    <div className="border-t pt-4 space-y-3">
+                                        <p className="text-sm font-medium flex items-center gap-1">
+                                            <Banknote className="h-4 w-4" />
+                                            Registrar Abono
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">Monto (S/)</Label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.10"
+                                                    min="0.10"
+                                                    max={remaining}
+                                                    value={payAmount}
+                                                    onChange={(e) => setPayAmount(e.target.value)}
+                                                    placeholder={remaining.toFixed(2)}
+                                                    className="text-lg"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs">Método</Label>
+                                                <select
+                                                    value={payMethod}
+                                                    onChange={(e) => setPayMethod(e.target.value)}
+                                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                >
+                                                    <option value="EFECTIVO">💵 Efectivo</option>
+                                                    <option value="YAPE">📱 Yape</option>
+                                                    <option value="TRANSFERENCIA">💳 Transferencia</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                className="flex-1"
+                                                variant="outline"
+                                                onClick={() => registrarPago(false)}
+                                                disabled={processing || !payAmount}
+                                            >
+                                                {processing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DollarSign className="h-4 w-4 mr-2" />}
+                                                Abonar S/ {payAmount || "0.00"}
+                                            </Button>
+                                            <Button
+                                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                                onClick={() => registrarPago(true)}
+                                                disabled={processing}
+                                            >
+                                                {processing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                                                Pago Total
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-
-                            <Button
-                                className="w-full bg-green-600 hover:bg-green-700"
-                                onClick={() => {
-                                    setShowDetail(false);
-                                    setShowPayDialog(true);
-                                }}
-                            >
-                                <DollarSign className="h-4 w-4 mr-2" />
-                                Marcar como Pagado
-                            </Button>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            {/* Dialog de confirmación de pago */}
-            <Dialog open={showPayDialog} onOpenChange={setShowPayDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Confirmar Pago</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <p className="text-center text-lg">
-                            ¿Confirmar que el cliente pagó
-                            <span className="font-bold text-green-600"> S/ {selectedCredito?.total.toFixed(2)}</span>?
-                        </p>
-                        {selectedCredito?.client?.name && (
-                            <p className="text-center text-muted-foreground mt-2">
-                                Cliente: {selectedCredito.client.name}
-                            </p>
-                        )}
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowPayDialog(false)}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={marcarPagado}
-                            disabled={processing}
-                        >
-                            {processing ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            ) : (
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                            )}
-                            Confirmar Pago
-                        </Button>
-                    </DialogFooter>
+                        );
+                    })()}
                 </DialogContent>
             </Dialog>
         </div>
