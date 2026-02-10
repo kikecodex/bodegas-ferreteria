@@ -62,16 +62,20 @@ export async function POST(request: NextRequest) {
             totalSales += sale.total;
         }
 
-        const expectedAmount = activeCash.openingAmount + totalSales;
+        // "Esperado" ahora es solo EFECTIVO físico en la gaveta
+        const cashSalesOnly = salesByMethod["EFECTIVO"] || 0;
+        const expectedCash = activeCash.openingAmount + cashSalesOnly;
+        const digitalSales = totalSales - cashSalesOnly;
         const actualClosing = parseFloat(closingAmount) || 0;
-        const difference = actualClosing - expectedAmount;
+        // La diferencia se calcula contra el efectivo físico esperado
+        const difference = actualClosing - expectedCash;
 
         // Cerrar caja
         const closedCash = await prisma.cashRegister.update({
             where: { id: activeCash.id },
             data: {
                 closingAmount: actualClosing,
-                expectedAmount,
+                expectedAmount: expectedCash,  // Guardar el esperado en efectivo
                 difference,
                 closedAt: new Date(),
                 closedBy: "system",
@@ -86,13 +90,14 @@ export async function POST(request: NextRequest) {
             cashRegister: closedCash,
             summary: {
                 openingAmount: activeCash.openingAmount,
-                cashSales: salesByMethod["EFECTIVO"] || 0,
-                expectedAmount,
+                cashSales: cashSalesOnly,
+                expectedAmount: expectedCash,
                 closingAmount: actualClosing,
                 difference,
-                differenceType: difference > 0 ? "SOBRANTE" : difference < 0 ? "FALTANTE" : "CUADRADO",
+                differenceType: Math.abs(difference) < 0.01 ? "CUADRADO" : difference > 0 ? "SOBRANTE" : "FALTANTE",
                 salesByMethod,
                 totalSales,
+                digitalSales,
                 salesCount: sales.length
             }
         });

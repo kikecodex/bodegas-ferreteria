@@ -103,6 +103,11 @@ export async function GET() {
             totalSales += sale.total;
         }
 
+        // Calcular lo que debe estar FÍSICAMENTE en la gaveta (solo EFECTIVO)
+        const cashSalesOnly = salesByMethod["EFECTIVO"] || 0;
+        const expectedCash = activeCash.openingAmount + cashSalesOnly;
+        const digitalSales = totalSales - cashSalesOnly;
+
         return NextResponse.json({
             isOpen: true,
             cashRegister: activeCash,
@@ -110,7 +115,9 @@ export async function GET() {
                 openingAmount: activeCash.openingAmount,
                 totalSales,
                 salesByMethod,
-                expectedAmount: activeCash.openingAmount + totalSales,
+                expectedAmount: activeCash.openingAmount + totalSales,  // Total incluyendo digital
+                expectedCash,    // Solo efectivo físico en gaveta
+                digitalSales,    // YAPE + Transferencia + otros digitales
                 salesCount: sales.length
             }
         });
