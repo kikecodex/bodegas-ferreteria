@@ -221,9 +221,10 @@ export async function POST(request: NextRequest) {
         const tax = taxCalc.tax;
         const total = taxCalc.total + exemptAmount;  // Gravados + exonerados
 
-        // Calcular vuelto
-        const paid = amountPaid || total;
-        const change = Math.max(0, paid - total);
+        // Calcular vuelto - Créditos no reciben pago al momento de la venta
+        const effectivePaymentMethod = paymentMethod || "EFECTIVO";
+        const paid = effectivePaymentMethod === "CREDITO" ? 0 : (amountPaid || total);
+        const change = effectivePaymentMethod === "CREDITO" ? 0 : Math.max(0, paid - total);
 
         // Generar número de venta (por tenant)
         const lastSale = await prisma.sale.findFirst({
