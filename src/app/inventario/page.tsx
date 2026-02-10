@@ -220,9 +220,9 @@ export default function InventarioPage() {
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                            <Link
+                            <a
                                 key={item.label}
-                                href={item.href}
+                                href={item.href} target="_blank" rel="noopener noreferrer"
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -230,19 +230,21 @@ export default function InventarioPage() {
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="font-medium">{item.label}</span>
-                            </Link>
+                            </a>
                         );
                     })}
                 </nav>
 
                 <div className="p-3 border-t">
-                    <Link
+                    <a
                         href="/configuracion"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
-                    </Link>
+                    </a>
                 </div>
 
                 <div className="p-4 border-t">
@@ -262,7 +264,35 @@ export default function InventarioPage() {
             {/* Main Content */}
             <main className="flex-1 flex flex-col">
                 <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Inventario</h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-bold">Inventario</h1>
+                        {/* Resumen compacto inline con filtros clickeables */}
+                        <div className="h-5 w-px bg-border" />
+                        <span
+                            className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md cursor-pointer transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                            onClick={() => setFilter("all")}
+                        >
+                            <Package className="h-3 w-3" />
+                            {stats.total} productos
+                        </span>
+                        <span
+                            className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md cursor-pointer transition-colors ${filter === "low" ? "bg-amber-500 text-white" : "bg-amber-500/15 text-amber-700 hover:bg-amber-500/25"}`}
+                            onClick={() => setFilter("low")}
+                        >
+                            <AlertTriangle className="h-3 w-3" />
+                            {stats.lowStock} stock bajo
+                        </span>
+                        <span
+                            className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md cursor-pointer transition-colors ${filter === "out" ? "bg-red-500 text-white" : "bg-red-500/15 text-red-700 hover:bg-red-500/25"}`}
+                            onClick={() => setFilter("out")}
+                        >
+                            <Box className="h-3 w-3" />
+                            {stats.outOfStock} sin stock
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-green-500/15 text-green-700">
+                            {stats.totalValue} unidades
+                        </span>
+                    </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => { fetchProducts(); fetchMovements(); }}>
                             <RefreshCw className="h-4 w-4 mr-1" />
@@ -275,53 +305,6 @@ export default function InventarioPage() {
                 </header>
 
                 <div className="p-6 space-y-4">
-                    {/* Stats */}
-                    <div className="grid grid-cols-4 gap-4">
-                        <Card className="cursor-pointer hover:border-primary" onClick={() => setFilter("all")}>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Total Productos</p>
-                                        <p className="text-2xl font-bold">{stats.total}</p>
-                                    </div>
-                                    <Package className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="cursor-pointer hover:border-amber-500" onClick={() => setFilter("low")}>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Stock Bajo</p>
-                                        <p className="text-2xl font-bold text-amber-500">{stats.lowStock}</p>
-                                    </div>
-                                    <AlertTriangle className="h-8 w-8 text-amber-500" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="cursor-pointer hover:border-red-500" onClick={() => setFilter("out")}>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Sin Stock</p>
-                                        <p className="text-2xl font-bold text-red-500">{stats.outOfStock}</p>
-                                    </div>
-                                    <Box className="h-8 w-8 text-red-500" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Unidades Totales</p>
-                                        <p className="text-2xl font-bold text-green-600">{stats.totalValue}</p>
-                                    </div>
-                                    <Box className="h-8 w-8 text-green-600" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
 
                     {/* Tabs */}
                     <div className="flex gap-2">

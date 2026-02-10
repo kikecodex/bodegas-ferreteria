@@ -193,9 +193,9 @@ export default function ClientesPage() {
                 {/* Navigation */}
                 <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
                     {navItems.map((item) => (
-                        <Link
+                        <a
                             key={item.label}
-                            href={item.href}
+                            href={item.href} target="_blank" rel="noopener noreferrer"
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${item.active
                                 ? "bg-primary text-primary-foreground"
                                 : "text-sidebar-foreground hover:bg-sidebar-accent"
@@ -203,7 +203,7 @@ export default function ClientesPage() {
                         >
                             <item.icon className={`h-5 w-5 ${item.active ? "" : "text-muted-foreground group-hover:text-foreground"}`} />
                             <span className="font-medium">{item.label}</span>
-                        </Link>
+                        </a>
                     ))}
                 </nav>
 

@@ -38,7 +38,8 @@ import {
     AlertCircle,
     Trash2,
     Banknote,
-    History
+    History,
+    Printer
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -119,6 +120,9 @@ export default function CreditosPage() {
     const fetchCreditos = useCallback(async () => {
         setLoading(true);
         try {
+            // Auto-reparar datos de créditos (corrige amountPaid incorrecto de registros antiguos)
+            await fetch("/api/admin/fix-credits", { method: "POST" }).catch(() => { });
+
             const res = await fetch("/api/sales?paymentMethod=CREDITO&status=COMPLETADA&limit=100");
             if (res.ok) {
                 const data = await res.json();
@@ -126,9 +130,9 @@ export default function CreditosPage() {
                 const pendientes = data.sales.filter((s: Sale) => s.status !== "PAGADO");
                 setCreditos(pendientes);
 
-                // Calcular total de deuda
-                const total = pendientes.reduce((sum: number, s: Sale) => sum + s.total, 0);
-                setTotalDeuda(total);
+                // Calcular total de deuda real (total - lo ya abonado)
+                const deuda = pendientes.reduce((sum: number, s: Sale) => sum + (s.total - (s.amountPaid || 0)), 0);
+                setTotalDeuda(deuda);
             }
         } catch (error) {
             console.error("Error fetching creditos:", error);
@@ -204,6 +208,54 @@ export default function CreditosPage() {
         }
     };
 
+    // Imprimir ticket de crédito - Mismo modelo de impresión de ventas
+    const printCredito = async (saleId: string) => {
+        try {
+            // Intentar usar servidor local de impresión (impresión 100% silenciosa)
+            try {
+                const pingResponse = await fetch('http://localhost:9100/ping', {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(1000)
+                });
+
+                if (pingResponse.ok) {
+                    const response = await fetch(`/api/sales/${saleId}/receipt`);
+                    if (!response.ok) throw new Error('Error al obtener ticket');
+                    const pdfBlob = await response.blob();
+
+                    const printResponse = await fetch('http://localhost:9100/print', {
+                        method: 'POST',
+                        body: pdfBlob
+                    });
+
+                    if (printResponse.ok) {
+                        console.log('✓ Ticket enviado a impresora POS-80');
+                        return;
+                    }
+                }
+            } catch (localError) {
+                console.log('Servidor local no disponible, abriendo ventana de impresión');
+            }
+
+            // Fallback: Abrir PDF en ventana popup separada
+            const printUrl = `/api/sales/${saleId}/receipt`;
+            const popup = window.open(
+                printUrl,
+                'ImprimirTicket',
+                'width=450,height=700,left=100,top=100,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
+            );
+
+            if (popup) {
+                popup.focus();
+            } else {
+                window.open(printUrl, '_blank');
+            }
+        } catch (error) {
+            console.error('Error al imprimir:', error);
+            alert('Error al imprimir el ticket');
+        }
+    };
+
     // Eliminar crédito
     const deleteCredito = async (credito: Sale) => {
         if (!confirm(`¿Eliminar el crédito ${credito.number}? Se revertirá el stock. Esta acción no se puede deshacer.`)) return;
@@ -259,7 +311,25 @@ export default function CreditosPage() {
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
                         </Link>
-                        <h1 className="text-2xl font-bold">Cuentas por Cobrar (Créditos)</h1>
+                        <h1 className="text-2xl font-bold">Cuentas por Cobrar</h1>
+                        {/* Resumen compacto inline */}
+                        {!loading && (
+                            <>
+                                <div className="h-5 w-px bg-border" />
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-amber-500/15 text-amber-700">
+                                    <DollarSign className="h-3 w-3" />
+                                    Por cobrar: S/ {totalDeuda.toFixed(2)}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-blue-500/15 text-blue-700">
+                                    <Receipt className="h-3 w-3" />
+                                    {creditos.length} créditos
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-purple-500/15 text-purple-700">
+                                    <Users className="h-3 w-3" />
+                                    {Object.keys(creditosPorCliente).length} clientes
+                                </span>
+                            </>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={fetchCreditos}>
@@ -270,42 +340,6 @@ export default function CreditosPage() {
                 </header>
 
                 <div className="p-6 space-y-6">
-                    {/* Resumen */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-2">
-                                    <CreditCard className="h-8 w-8 opacity-80" />
-                                    <Badge variant="secondary" className="bg-white/20 text-white">
-                                        Pendientes
-                                    </Badge>
-                                </div>
-                                <p className="text-white/80 text-sm">Total por Cobrar</p>
-                                <p className="text-3xl font-bold">S/ {totalDeuda.toFixed(2)}</p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-2">
-                                    <Receipt className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                                <p className="text-muted-foreground text-sm">Créditos Activos</p>
-                                <p className="text-3xl font-bold">{creditos.length}</p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-2">
-                                    <Users className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                                <p className="text-muted-foreground text-sm">Clientes con Deuda</p>
-                                <p className="text-3xl font-bold">{Object.keys(creditosPorCliente).length}</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
                     {/* Filtro de búsqueda */}
                     <Card>
                         <CardContent className="p-4">
@@ -416,6 +450,14 @@ export default function CreditosPage() {
                                                                         onClick={() => viewCredito(credito)}
                                                                     >
                                                                         <Eye className="h-4 w-4" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        title="Imprimir ticket"
+                                                                        onClick={() => printCredito(credito.id)}
+                                                                    >
+                                                                        <Printer className="h-4 w-4" />
                                                                     </Button>
                                                                     <Button
                                                                         variant="ghost"
@@ -533,6 +575,18 @@ export default function CreditosPage() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Botón imprimir en el dialog */}
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => printCredito(selectedCredito.id)}
+                                    >
+                                        <Printer className="h-4 w-4 mr-2" />
+                                        Imprimir Ticket
+                                    </Button>
+                                </div>
 
                                 {/* Formulario de pago */}
                                 {remaining > 0.01 && (

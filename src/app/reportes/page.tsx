@@ -245,9 +245,9 @@ export default function ReportesPage() {
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                            <Link
+                            <a
                                 key={item.label}
-                                href={item.href}
+                                href={item.href} target="_blank" rel="noopener noreferrer"
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -255,19 +255,21 @@ export default function ReportesPage() {
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="font-medium">{item.label}</span>
-                            </Link>
+                            </a>
                         );
                     })}
                 </nav>
 
                 <div className="p-3 border-t">
-                    <Link
+                    <a
                         href="/configuracion"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
-                    </Link>
+                    </a>
                 </div>
 
                 <div className="p-4 border-t">

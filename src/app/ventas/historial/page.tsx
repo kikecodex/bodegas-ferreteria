@@ -468,9 +468,9 @@ export default function HistorialVentasPage() {
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                            <Link
+                            <a
                                 key={item.label}
-                                href={item.href}
+                                href={item.href} target="_blank" rel="noopener noreferrer"
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -478,19 +478,21 @@ export default function HistorialVentasPage() {
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="font-medium">{item.label}</span>
-                            </Link>
+                            </a>
                         );
                     })}
                 </nav>
 
                 <div className="p-3 border-t">
-                    <Link
+                    <a
                         href="/configuracion"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
-                    </Link>
+                    </a>
                 </div>
 
                 <div className="p-4 border-t">
@@ -573,8 +575,8 @@ export default function HistorialVentasPage() {
                     {/* Filtros */}
                     <Card>
                         <CardContent className="p-4 space-y-3">
-                            {/* Botones de filtro rápido por fecha */}
-                            <div className="flex gap-2">
+                            {/* Botones de filtro rápido por fecha + Resumen compacto */}
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <Button
                                     variant={dateFrom === getLocalDateStr() && dateTo === getLocalDateStr() ? "default" : "outline"}
                                     size="sm"
@@ -638,6 +640,25 @@ export default function HistorialVentasPage() {
                                         Limpiar
                                     </Button>
                                 )}
+
+                                {/* Resumen compacto inline */}
+                                {!loading && summary.cantidadVentas > 0 && (
+                                    <>
+                                        <div className="h-5 w-px bg-border mx-1" />
+                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-green-500/15 text-green-700">
+                                            <DollarSign className="h-3 w-3" />
+                                            S/ {summary.totalVentas.toFixed(2)}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-blue-500/15 text-blue-700">
+                                            <Receipt className="h-3 w-3" />
+                                            {summary.cantidadVentas} ventas
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md bg-amber-500/15 text-amber-700">
+                                            <TrendingUp className="h-3 w-3" />
+                                            Prom: S/ {(summary.totalVentas / summary.cantidadVentas).toFixed(2)}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                             <div className="flex gap-4 items-end">
                                 <div className="flex-1">
@@ -679,50 +700,6 @@ export default function HistorialVentasPage() {
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Resumen del día - Usa totales del servidor (sin paginación) */}
-                    {!loading && summary.cantidadVentas > 0 && (() => {
-                        const totalDia = summary.totalVentas;
-                        const cantidadVentas = summary.cantidadVentas;
-                        const promedio = cantidadVentas > 0 ? totalDia / cantidadVentas : 0;
-                        return (
-                            <div className="grid grid-cols-3 gap-4">
-                                <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm text-green-100">Total Ventas</p>
-                                                <p className="text-2xl font-bold">S/ {totalDia.toFixed(2)}</p>
-                                            </div>
-                                            <DollarSign className="h-8 w-8 text-green-200" />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm text-blue-100">Cantidad de Ventas</p>
-                                                <p className="text-2xl font-bold">{cantidadVentas}</p>
-                                            </div>
-                                            <Receipt className="h-8 w-8 text-blue-200" />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm text-amber-100">Promedio por Venta</p>
-                                                <p className="text-2xl font-bold">S/ {promedio.toFixed(2)}</p>
-                                            </div>
-                                            <TrendingUp className="h-8 w-8 text-amber-200" />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        );
-                    })()}
 
                     {/* Tabla */}
                     <Card>

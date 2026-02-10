@@ -125,23 +125,23 @@ export default function ProveedoresPage() {
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                            <Link
+                            <a
                                 key={item.label}
-                                href={item.href}
+                                href={item.href} target="_blank" rel="noopener noreferrer"
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active ? "bg-red-600 text-white" : "text-muted-foreground hover:bg-accent"
                                     }`}
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="font-medium">{item.label}</span>
-                            </Link>
+                            </a>
                         );
                     })}
                 </nav>
                 <div className="p-3 border-t">
-                    <Link href="/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
+                    <a href="/configuracion" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
-                    </Link>
+                    </a>
                 </div>
             </aside>
 

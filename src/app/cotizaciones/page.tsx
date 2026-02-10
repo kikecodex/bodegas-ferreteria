@@ -208,6 +208,16 @@ export default function CotizacionesPage() {
         setCart(prev => prev.filter(i => i.productId !== productId));
     };
 
+    const updateUnitPrice = (productId: string, newPrice: number) => {
+        setCart(prev => prev.map(item => {
+            if (item.productId === productId) {
+                const price = Math.max(0, newPrice);
+                return { ...item, unitPrice: price, subtotal: item.quantity * price };
+            }
+            return item;
+        }));
+    };
+
     // Calcular totales - Los precios YA INCLUYEN IGV
     const cartTotal = cart.reduce((sum, i) => sum + i.subtotal, 0);
     const taxCalc = calculateTaxes(cartTotal, true); // true = IGV incluido
@@ -338,23 +348,23 @@ export default function CotizacionesPage() {
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                            <Link
+                            <a
                                 key={item.label}
-                                href={item.href}
+                                href={item.href} target="_blank" rel="noopener noreferrer"
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active ? "bg-red-600 text-white" : "text-muted-foreground hover:bg-accent"
                                     }`}
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="font-medium">{item.label}</span>
-                            </Link>
+                            </a>
                         );
                     })}
                 </nav>
                 <div className="p-3 border-t">
-                    <Link href="/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
+                    <a href="/configuracion" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
-                    </Link>
+                    </a>
                 </div>
             </aside>
 
@@ -571,20 +581,31 @@ export default function CotizacionesPage() {
                                     <div className="space-y-2">
                                         {cart.map(item => (
                                             <div key={item.productId} className="flex items-center gap-2 p-2 bg-muted rounded">
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-sm">{item.name}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium text-sm truncate">{item.name}</p>
                                                     <p className="text-xs text-muted-foreground">{item.code}</p>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-xs text-muted-foreground">P.U.</span>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={item.unitPrice || ""}
+                                                        onChange={(e) => updateUnitPrice(item.productId, parseFloat(e.target.value) || 0)}
+                                                        className="w-20 h-7 text-xs text-center px-1"
+                                                    />
                                                 </div>
                                                 <div className="flex items-center gap-1">
                                                     <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.productId, -1)}>
                                                         <Minus className="h-3 w-3" />
                                                     </Button>
-                                                    <span className="w-8 text-center">{item.quantity}</span>
+                                                    <span className="w-8 text-center text-sm">{item.quantity}</span>
                                                     <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.productId, 1)}>
                                                         <Plus className="h-3 w-3" />
                                                     </Button>
                                                 </div>
-                                                <span className="w-24 text-right font-bold">S/ {item.subtotal.toFixed(2)}</span>
+                                                <span className="w-24 text-right font-bold text-sm">S/ {item.subtotal.toFixed(2)}</span>
                                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeFromCart(item.productId)}>
                                                     <X className="h-4 w-4" />
                                                 </Button>

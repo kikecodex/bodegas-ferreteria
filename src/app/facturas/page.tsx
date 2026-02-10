@@ -231,9 +231,9 @@ export default function FacturasPage() {
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                            <Link
+                            <a
                                 key={item.label}
-                                href={item.href}
+                                href={item.href} target="_blank" rel="noopener noreferrer"
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -241,19 +241,21 @@ export default function FacturasPage() {
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="font-medium">{item.label}</span>
-                            </Link>
+                            </a>
                         );
                     })}
                 </nav>
 
                 <div className="p-3 border-t">
-                    <Link
+                    <a
                         href="/configuracion"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
-                    </Link>
+                    </a>
                 </div>
 
                 <div className="p-4 border-t">
@@ -273,7 +275,25 @@ export default function FacturasPage() {
             {/* Main Content */}
             <main className="flex-1 flex flex-col">
                 <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Comprobantes</h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-bold">Comprobantes</h1>
+                        {/* Resumen compacto inline con filtros clickeables */}
+                        <div className="h-5 w-px bg-border" />
+                        <span
+                            className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md cursor-pointer transition-colors ${docFilter === "BOLETA" ? "bg-blue-500 text-white" : "bg-blue-500/15 text-blue-700 hover:bg-blue-500/25"}`}
+                            onClick={() => setDocFilter(docFilter === "BOLETA" ? "all" : "BOLETA")}
+                        >
+                            <FileCheck className="h-3 w-3" />
+                            {stats.totalBoletas} Boletas · S/ {stats.montoBoletas.toFixed(2)}
+                        </span>
+                        <span
+                            className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-md cursor-pointer transition-colors ${docFilter === "FACTURA" ? "bg-green-500 text-white" : "bg-green-500/15 text-green-700 hover:bg-green-500/25"}`}
+                            onClick={() => setDocFilter(docFilter === "FACTURA" ? "all" : "FACTURA")}
+                        >
+                            <FileMinus className="h-3 w-3" />
+                            {stats.totalFacturas} Facturas · S/ {stats.montoFacturas.toFixed(2)}
+                        </span>
+                    </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={fetchSales}>
                             <RefreshCw className="h-4 w-4 mr-1" />
@@ -286,53 +306,6 @@ export default function FacturasPage() {
                 </header>
 
                 <div className="p-6 space-y-4">
-                    {/* Stats */}
-                    <div className="grid grid-cols-4 gap-4">
-                        <Card className={`cursor-pointer ${docFilter === "BOLETA" ? "border-blue-500" : ""}`} onClick={() => setDocFilter(docFilter === "BOLETA" ? "all" : "BOLETA")}>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Boletas</p>
-                                        <p className="text-2xl font-bold">{stats.totalBoletas}</p>
-                                    </div>
-                                    <FileCheck className="h-8 w-8 text-blue-500" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Monto Boletas</p>
-                                        <p className="text-2xl font-bold text-blue-600">S/ {stats.montoBoletas.toFixed(2)}</p>
-                                    </div>
-                                    <Receipt className="h-8 w-8 text-blue-500" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className={`cursor-pointer ${docFilter === "FACTURA" ? "border-green-500" : ""}`} onClick={() => setDocFilter(docFilter === "FACTURA" ? "all" : "FACTURA")}>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Facturas</p>
-                                        <p className="text-2xl font-bold">{stats.totalFacturas}</p>
-                                    </div>
-                                    <FileMinus className="h-8 w-8 text-green-500" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Monto Facturas</p>
-                                        <p className="text-2xl font-bold text-green-600">S/ {stats.montoFacturas.toFixed(2)}</p>
-                                    </div>
-                                    <Receipt className="h-8 w-8 text-green-500" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
 
                     {/* Filtros */}
                     <Card>
