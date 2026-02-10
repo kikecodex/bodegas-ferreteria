@@ -61,8 +61,15 @@ export async function GET(request: NextRequest) {
             ];
         }
 
-        // Consultar
-        const [sales, total] = await Promise.all([
+        // Construir filtro para resumen (excluir CREDITO, solo COMPLETADA)
+        const summaryWhere = {
+            ...where,
+            status: "COMPLETADA",
+            paymentMethod: { not: "CREDITO" }
+        };
+
+        // Consultar ventas paginadas + total + resumen agregado
+        const [sales, total, summaryAgg, summaryCount] = await Promise.all([
             prisma.sale.findMany({
                 where,
                 include: {
@@ -88,7 +95,12 @@ export async function GET(request: NextRequest) {
                 skip,
                 take: limit
             }),
-            prisma.sale.count({ where })
+            prisma.sale.count({ where }),
+            prisma.sale.aggregate({
+                where: summaryWhere,
+                _sum: { total: true }
+            }),
+            prisma.sale.count({ where: summaryWhere })
         ]);
 
         return NextResponse.json({
@@ -98,6 +110,10 @@ export async function GET(request: NextRequest) {
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit)
+            },
+            summary: {
+                totalVentas: summaryAgg._sum.total || 0,
+                cantidadVentas: summaryCount
             }
         });
     } catch (error) {

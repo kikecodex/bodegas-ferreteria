@@ -151,6 +151,9 @@ export default function HistorialVentasPage() {
     const [voidingId, setVoidingId] = useState<string | null>(null);
     const [deletingVoided, setDeletingVoided] = useState(false);
 
+    // Resumen agregado del servidor (sin paginación)
+    const [summary, setSummary] = useState({ totalVentas: 0, cantidadVentas: 0 });
+
     const fetchSales = useCallback(async () => {
         setLoading(true);
         try {
@@ -171,6 +174,10 @@ export default function HistorialVentasPage() {
                 );
                 setSales(salesFiltradas);
                 setTotalPages(data.pagination?.totalPages || 1);
+                // Resumen agregado del servidor (totales reales sin paginación)
+                if (data.summary) {
+                    setSummary(data.summary);
+                }
             }
         } catch (error) {
             console.error("Error fetching sales:", error);
@@ -673,11 +680,10 @@ export default function HistorialVentasPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Resumen del día */}
-                    {!loading && sales.length > 0 && (() => {
-                        const ventasCompletadas = sales.filter(s => s.status === "COMPLETADA");
-                        const totalDia = ventasCompletadas.reduce((sum, s) => sum + s.total, 0);
-                        const cantidadVentas = ventasCompletadas.length;
+                    {/* Resumen del día - Usa totales del servidor (sin paginación) */}
+                    {!loading && summary.cantidadVentas > 0 && (() => {
+                        const totalDia = summary.totalVentas;
+                        const cantidadVentas = summary.cantidadVentas;
                         const promedio = cantidadVentas > 0 ? totalDia / cantidadVentas : 0;
                         return (
                             <div className="grid grid-cols-3 gap-4">
