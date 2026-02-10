@@ -80,20 +80,33 @@ export async function GET() {
 
         // Calcular ventas del día de hoy (filtrado por tenant)
         // Excluir ventas a crédito - no representan ingreso en caja
-        const sales = await prisma.sale.findMany({
-            where: {
-                createdAt: { gte: startOfToday },
-                status: "COMPLETADA",
-                tenantId: tenant.tenantId,
-                paymentMethod: { not: "CREDITO" }
-            },
-            select: {
-                total: true,
-                paymentMethod: true
-            }
-        });
+        const [sales, salesNotes] = await Promise.all([
+            prisma.sale.findMany({
+                where: {
+                    createdAt: { gte: startOfToday },
+                    status: "COMPLETADA",
+                    tenantId: tenant.tenantId,
+                    paymentMethod: { not: "CREDITO" }
+                },
+                select: {
+                    total: true,
+                    paymentMethod: true
+                }
+            }),
+            prisma.salesNote.findMany({
+                where: {
+                    createdAt: { gte: startOfToday },
+                    status: "COMPLETADA",
+                    tenantId: tenant.tenantId
+                },
+                select: {
+                    total: true,
+                    paymentMethod: true
+                }
+            })
+        ]);
 
-        // Agrupar por método de pago
+        // Agrupar por método de pago (ventas + notas de venta)
         const salesByMethod: Record<string, number> = {};
         let totalSales = 0;
 
@@ -101,6 +114,15 @@ export async function GET() {
             salesByMethod[sale.paymentMethod] =
                 (salesByMethod[sale.paymentMethod] || 0) + sale.total;
             totalSales += sale.total;
+        }
+
+        // Sumar notas de venta al total y desglose
+        let totalNotasVenta = 0;
+        for (const note of salesNotes) {
+            salesByMethod[note.paymentMethod] =
+                (salesByMethod[note.paymentMethod] || 0) + note.total;
+            totalSales += note.total;
+            totalNotasVenta += note.total;
         }
 
         // Calcular lo que debe estar FÍSICAMENTE en la gaveta (solo EFECTIVO)
@@ -118,7 +140,9 @@ export async function GET() {
                 expectedAmount: activeCash.openingAmount + totalSales,  // Total incluyendo digital
                 expectedCash,    // Solo efectivo físico en gaveta
                 digitalSales,    // YAPE + Transferencia + otros digitales
-                salesCount: sales.length
+                salesCount: sales.length + salesNotes.length,
+                salesNotesCount: salesNotes.length,
+                salesNotesTotal: totalNotasVenta
             }
         });
     } catch (error) {
