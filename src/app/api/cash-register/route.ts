@@ -117,18 +117,13 @@ export async function GET() {
         }
 
         // Sumar notas de venta al total y desglose
-        let totalNotasVenta = 0;
         for (const note of salesNotes) {
             salesByMethod[note.paymentMethod] =
                 (salesByMethod[note.paymentMethod] || 0) + note.total;
             totalSales += note.total;
-            totalNotasVenta += note.total;
         }
 
-        // Calcular lo que debe estar FÍSICAMENTE en la gaveta (solo EFECTIVO)
-        const cashSalesOnly = salesByMethod["EFECTIVO"] || 0;
-        const expectedCash = activeCash.openingAmount + cashSalesOnly;
-        const digitalSales = totalSales - cashSalesOnly;
+        const expectedAmount = activeCash.openingAmount + totalSales;
 
         return NextResponse.json({
             isOpen: true,
@@ -137,12 +132,8 @@ export async function GET() {
                 openingAmount: activeCash.openingAmount,
                 totalSales,
                 salesByMethod,
-                expectedAmount: activeCash.openingAmount + totalSales,  // Total incluyendo digital
-                expectedCash,    // Solo efectivo físico en gaveta
-                digitalSales,    // YAPE + Transferencia + otros digitales
-                salesCount: sales.length + salesNotes.length,
-                salesNotesCount: salesNotes.length,
-                salesNotesTotal: totalNotasVenta
+                expectedAmount,
+                salesCount: sales.length + salesNotes.length
             }
         });
     } catch (error) {

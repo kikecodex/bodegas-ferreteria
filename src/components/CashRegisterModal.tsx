@@ -24,8 +24,6 @@ interface CashSummary {
     totalSales: number;
     salesByMethod: Record<string, number>;
     expectedAmount: number;
-    expectedCash: number;     // Solo efectivo físico en gaveta
-    digitalSales: number;     // YAPE + Transferencia + otros
     salesCount: number;
 }
 
@@ -74,8 +72,7 @@ export function CashRegisterModal({ isOpen, onClose, onCashUpdated }: CashRegist
                 const data = await res.json();
                 setCashStatus(data);
                 if (data.summary) {
-                    // Pre-llenar con el monto esperado en efectivo físico
-                    setClosingAmount((data.summary.expectedCash ?? data.summary.expectedAmount).toFixed(2));
+                    setClosingAmount(data.summary.expectedAmount.toFixed(2));
                 }
             }
         } catch (error) {
@@ -222,15 +219,9 @@ export function CashRegisterModal({ isOpen, onClose, onCashUpdated }: CashRegist
                                     )}
 
                                     <div className="flex justify-between font-medium border-t pt-2">
-                                        <span>Efectivo en gaveta</span>
-                                        <span>S/ {(cashStatus.summary.expectedCash ?? cashStatus.summary.expectedAmount).toFixed(2)}</span>
+                                        <span>Esperado en caja</span>
+                                        <span>S/ {cashStatus.summary.expectedAmount.toFixed(2)}</span>
                                     </div>
-                                    {(cashStatus.summary.digitalSales ?? 0) > 0 && (
-                                        <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>Ventas digitales (no en gaveta)</span>
-                                            <span>S/ {cashStatus.summary.digitalSales.toFixed(2)}</span>
-                                        </div>
-                                    )}
                                 </CardContent>
                             </Card>
                         )}
@@ -247,7 +238,7 @@ export function CashRegisterModal({ isOpen, onClose, onCashUpdated }: CashRegist
                             />
                             {closingAmount && cashStatus.summary && (
                                 <DifferenceIndicator
-                                    expected={cashStatus.summary.expectedCash ?? cashStatus.summary.expectedAmount}
+                                    expected={cashStatus.summary.expectedAmount}
                                     actual={parseFloat(closingAmount)}
                                 />
                             )}
