@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getTenantFromSession } from "@/lib/tenant-context";
+import { getTenantFromSession, getUserFromSession } from "@/lib/tenant-context";
 
 // DELETE /api/sales/clear-sales - Eliminar todas las ventas del tenant
-// Requiere confirmación con el nombre del tenant
+// Requiere rol ADMIN/GERENTE + confirmación con el nombre del tenant
 export async function DELETE(request: NextRequest) {
     try {
         const tenantContext = await getTenantFromSession();
@@ -15,8 +15,14 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
-        // Nota: Cualquier usuario autenticado puede limpiar historial
-        // La confirmación con el slug del tenant es la seguridad
+        // SEGURIDAD: Solo ADMIN o GERENTE pueden limpiar historial
+        const user = await getUserFromSession();
+        if (!user || !["ADMIN", "GERENTE", "SUPERADMIN"].includes(user.role)) {
+            return NextResponse.json(
+                { error: "Solo administradores pueden eliminar el historial de ventas" },
+                { status: 403 }
+            );
+        }
 
         const body = await request.json();
         const { confirmation } = body;

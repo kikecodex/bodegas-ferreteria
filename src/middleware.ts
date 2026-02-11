@@ -9,11 +9,8 @@ const publicPaths = [
     "/api/auth/logout",
     "/api/auth/register", // API de registro
     "/api/lookup",    // Consulta SUNAT/RENIEC
-    "/api/seed",       // Para desarrollo
-    "/api/seed-superadmin",
-    "/api/seed-bodega",
-    "/api/fix-admin",
-    "/api/fix-tenant",
+    // SEGURIDAD: Rutas de seed/fix removidas de publicPaths
+    // Solo accesibles con sesión autenticada
 ];
 
 // Rutas de admin (solo SUPERADMIN)
