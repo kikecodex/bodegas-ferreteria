@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // Obtener totales de otros períodos para comparación (filtrado por tenant)
+        // Obtener totales de los 3 períodos en UN SOLO query (optimización de latencia)
         const todayStart = new Date(peruDateStr + 'T00:00:00-05:00');
         const [y, m] = peruDateStr.split('-');
         const peruNowForWeek = new Date(peruDateStr + 'T12:00:00-05:00');
@@ -105,38 +105,30 @@ export async function GET(request: NextRequest) {
         const weekStart = new Date(weekStartStr + 'T00:00:00-05:00');
         const monthStart = new Date(`${y}-${m}-01T00:00:00-05:00`);
 
-        const [totalHoy, totalSemana, totalMes] = await Promise.all([
-            prisma.sale.aggregate({
-                where: {
-                    createdAt: { gte: todayStart, lte: endOfToday },
-                    status: "COMPLETADA",
-                    tenantId: tenant.tenantId,
-                    paymentMethod: { not: "CREDITO" }
-                },
-                _sum: { total: true },
-                _count: true
-            }),
-            prisma.sale.aggregate({
-                where: {
-                    createdAt: { gte: weekStart, lte: endOfToday },
-                    status: "COMPLETADA",
-                    tenantId: tenant.tenantId,
-                    paymentMethod: { not: "CREDITO" }
-                },
-                _sum: { total: true },
-                _count: true
-            }),
-            prisma.sale.aggregate({
-                where: {
-                    createdAt: { gte: monthStart, lte: endOfToday },
-                    status: "COMPLETADA",
-                    tenantId: tenant.tenantId,
-                    paymentMethod: { not: "CREDITO" }
-                },
-                _sum: { total: true },
-                _count: true
-            })
-        ]);
+        // Single query with CASE for all 3 periods instead of 3 separate aggregates
+        const periodSummary = await prisma.$queryRaw<Array<{
+            total_hoy: number | null;
+            count_hoy: bigint;
+            total_semana: number | null;
+            count_semana: bigint;
+            total_mes: number | null;
+            count_mes: bigint;
+        }>>`
+            SELECT
+                COALESCE(SUM(CASE WHEN "createdAt" >= ${todayStart} THEN total ELSE 0 END), 0) as total_hoy,
+                COUNT(CASE WHEN "createdAt" >= ${todayStart} THEN 1 END) as count_hoy,
+                COALESCE(SUM(CASE WHEN "createdAt" >= ${weekStart} THEN total ELSE 0 END), 0) as total_semana,
+                COUNT(CASE WHEN "createdAt" >= ${weekStart} THEN 1 END) as count_semana,
+                COALESCE(SUM(total), 0) as total_mes,
+                COUNT(*) as count_mes
+            FROM "Sale"
+            WHERE "tenantId" = ${tenant.tenantId}
+                AND "status" = 'COMPLETADA'
+                AND "paymentMethod" != 'CREDITO'
+                AND "createdAt" >= ${monthStart}
+                AND "createdAt" <= ${endOfToday}
+        `;
+        const ps = periodSummary[0];
 
         return NextResponse.json({
             period,
@@ -149,16 +141,16 @@ export async function GET(request: NextRequest) {
             ventasPorHora,
             resumen: {
                 hoy: {
-                    total: totalHoy._sum.total || 0,
-                    cantidad: totalHoy._count
+                    total: Number(ps.total_hoy) || 0,
+                    cantidad: Number(ps.count_hoy)
                 },
                 semana: {
-                    total: totalSemana._sum.total || 0,
-                    cantidad: totalSemana._count
+                    total: Number(ps.total_semana) || 0,
+                    cantidad: Number(ps.count_semana)
                 },
                 mes: {
-                    total: totalMes._sum.total || 0,
-                    cantidad: totalMes._count
+                    total: Number(ps.total_mes) || 0,
+                    cantidad: Number(ps.count_mes)
                 }
             }
         });

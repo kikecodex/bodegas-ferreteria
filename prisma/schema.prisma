@@ -193,6 +193,7 @@ model Product {
   
   @@unique([tenantId, code])  // Código único por tenant
   @@index([tenantId])
+  @@index([tenantId, isActive, name])
 }
 
 model StockMovement {
@@ -354,6 +355,8 @@ model Sale {
   
   @@unique([tenantId, number])  // Número único por tenant
   @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status, paymentMethod, createdAt])
 }
 
 model SaleItem {
@@ -400,6 +403,7 @@ model CashRegister {
   tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   
   @@index([tenantId])
+  @@index([tenantId, closedAt])
 }
 
 // ==========================================
@@ -598,6 +602,8 @@ model SalesNote {
   
   @@unique([tenantId, number])
   @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status, createdAt])
 }
 
 model SalesNoteItem {
