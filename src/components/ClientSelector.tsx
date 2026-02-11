@@ -128,7 +128,9 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
 
     // Guardar nuevo cliente
     const saveNewClient = async () => {
-        if (!newClient?.document || !newClient?.name) return;
+        if (!newClient?.name) return;
+        // Si no es SIN_DOC, requiere documento
+        if (newClient.documentType !== "SIN_DOC" && !newClient.document) return;
 
         setSaving(true);
         try {
@@ -293,15 +295,19 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
                                         >
                                             <option value="DNI">DNI</option>
                                             <option value="RUC">RUC</option>
+                                            <option value="SIN_DOC">Sin Documento</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="text-xs text-gray-500 dark:text-gray-400">Número *</label>
+                                        <label className="text-xs text-gray-500 dark:text-gray-400">
+                                            {newClient.documentType === "SIN_DOC" ? "Número (auto)" : "Número *"}
+                                        </label>
                                         <Input
                                             value={newClient.document || ""}
                                             onChange={(e) => setNewClient({ ...newClient, document: e.target.value })}
-                                            placeholder={newClient.documentType === "RUC" ? "20XXXXXXXXX" : "XXXXXXXX"}
+                                            placeholder={newClient.documentType === "SIN_DOC" ? "Se genera automático" : newClient.documentType === "RUC" ? "20XXXXXXXXX" : "XXXXXXXX"}
                                             maxLength={11}
+                                            disabled={newClient.documentType === "SIN_DOC"}
                                             className="bg-white dark:bg-zinc-700 text-black dark:text-white"
                                         />
                                     </div>
@@ -358,7 +364,7 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
                                 <Button
                                     className="flex-1 bg-green-600 hover:bg-green-700"
                                     onClick={saveNewClient}
-                                    disabled={saving || !newClient.name || !newClient.document}
+                                    disabled={saving || !newClient.name || (newClient.documentType !== "SIN_DOC" && !newClient.document)}
                                 >
                                     {saving ? (
                                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />

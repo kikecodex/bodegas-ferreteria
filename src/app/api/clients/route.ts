@@ -109,27 +109,37 @@ export async function POST(request: NextRequest) {
         } = body;
 
         // Validaciones
-        if (!document || !name) {
+        if (!name) {
             return NextResponse.json(
-                { error: "Documento y nombre son requeridos" },
+                { error: "Nombre es requerido" },
                 { status: 400 }
             );
         }
 
-        // Validar formato de documento
-        const docTrimmed = document.trim();
-        if (documentType === "DNI" && !/^\d{8}$/.test(docTrimmed)) {
-            return NextResponse.json(
-                { error: "DNI debe tener exactamente 8 dígitos" },
-                { status: 400 }
-            );
-        }
+        // Si no hay documento o tipo es SIN_DOC, generar automáticamente
+        let finalDocType = documentType || "DNI";
+        let docTrimmed = document?.trim() || "";
 
-        if (documentType === "RUC" && !/^(10|20)\d{9}$/.test(docTrimmed)) {
-            return NextResponse.json(
-                { error: "RUC debe tener 11 dígitos y comenzar con 10 o 20" },
-                { status: 400 }
-            );
+        if (!docTrimmed || finalDocType === "SIN_DOC") {
+            finalDocType = "SIN_DOC";
+            const timestamp = Date.now().toString(36).toUpperCase();
+            const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+            docTrimmed = `SD-${timestamp}${random}`;
+        } else {
+            // Validar formato de documento solo si tiene documento
+            if (finalDocType === "DNI" && !/^\d{8}$/.test(docTrimmed)) {
+                return NextResponse.json(
+                    { error: "DNI debe tener exactamente 8 dígitos" },
+                    { status: 400 }
+                );
+            }
+
+            if (finalDocType === "RUC" && !/^(10|20)\d{9}$/.test(docTrimmed)) {
+                return NextResponse.json(
+                    { error: "RUC debe tener 11 dígitos y comenzar con 10 o 20" },
+                    { status: 400 }
+                );
+            }
         }
 
         // Verificar documento único en este tenant
@@ -150,7 +160,7 @@ export async function POST(request: NextRequest) {
         // Crear cliente
         const client = await prisma.client.create({
             data: {
-                documentType: documentType || "DNI",
+                documentType: finalDocType,
                 document: docTrimmed,
                 name: name.trim(),
                 phone: phone?.trim() || null,
