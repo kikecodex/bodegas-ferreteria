@@ -210,6 +210,23 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
                         )}
                     </div>
 
+                    {/* Botón CREAR NUEVO - SIEMPRE VISIBLE */}
+                    {!newClient && (
+                        <Button
+                            variant="outline"
+                            className="w-full mb-4 border-dashed border-2 border-green-400 text-green-600 hover:bg-green-50 dark:hover:bg-green-950 h-12 text-base font-medium"
+                            onClick={() => setNewClient({
+                                documentType: search.length === 11 ? "RUC" : "DNI",
+                                document: search.length >= 8 && search.length <= 11 && /^\d+$/.test(search) ? search : "",
+                                name: /^\d+$/.test(search) ? "" : (search.length >= 3 ? search : ""),
+                                address: ""
+                            })}
+                        >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Crear Nuevo Cliente
+                        </Button>
+                    )}
+
                     {/* Resultados */}
                     {results.length > 0 && (
                         <div className="space-y-2 mb-4 max-h-[200px] overflow-y-auto">
@@ -255,22 +272,7 @@ export function ClientSelector({ isOpen, onClose, onSelect, required }: ClientSe
                         </Button>
                     )}
 
-                    {/* Botón crear manualmente - siempre visible cuando no hay resultados */}
-                    {search.length >= 3 && results.length === 0 && !newClient && !loading && (
-                        <Button
-                            variant="outline"
-                            className="w-full mb-4 border-green-200 text-green-600 hover:bg-green-50"
-                            onClick={() => setNewClient({
-                                documentType: search.length === 11 ? "RUC" : "DNI",
-                                document: search.length >= 8 && search.length <= 11 && /^\d+$/.test(search) ? search : "",
-                                name: /^\d+$/.test(search) ? "" : search, // Si no es número, usar como nombre
-                                address: ""
-                            })}
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Agregar Nuevo Cliente
-                        </Button>
-                    )}
+                    {/* Consultar SUNAT - visible cuando hay documentos válidos y no hay resultados */}
 
                     {/* Formulario nuevo cliente */}
                     {newClient && (

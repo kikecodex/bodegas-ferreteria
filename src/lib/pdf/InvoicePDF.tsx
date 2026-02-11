@@ -60,8 +60,8 @@ const TICKET_WIDTH = 204.3;
 // Estilos OPTIMIZADOS para impresora térmica POS-80
 const styles = StyleSheet.create({
     page: {
-        padding: 4,  // Reducido de 8 a 4
-        paddingTop: 2,  // Mínimo espacio arriba
+        padding: 2,
+        paddingTop: 0,  // Eliminar espacio arriba para corte térmico
         fontSize: 9,
         fontFamily: "Helvetica-Bold",
         width: TICKET_WIDTH,
@@ -70,7 +70,9 @@ const styles = StyleSheet.create({
     // Logo centrado arriba (sin línea para no afectar impresión)
     logoContainer: {
         alignItems: "center",
+        marginTop: 0,
         marginBottom: 0,
+        paddingTop: 0,
         paddingBottom: 0
     },
     logo: {
@@ -81,8 +83,8 @@ const styles = StyleSheet.create({
     // Datos de empresa
     companySection: {
         alignItems: "center",
-        marginBottom: 4,
-        paddingBottom: 3,
+        marginBottom: 2,
+        paddingBottom: 2,
         borderBottomWidth: 1,
         borderBottomColor: "#000"
     },
@@ -100,8 +102,8 @@ const styles = StyleSheet.create({
     // Tipo de documento
     documentSection: {
         alignItems: "center",
-        marginBottom: 6,
-        paddingVertical: 4
+        marginBottom: 3,
+        paddingVertical: 2
     },
     documentType: {
         fontSize: 10,  // Aumentado de 8 a 10
@@ -115,8 +117,8 @@ const styles = StyleSheet.create({
     },
     // Fechas
     infoSection: {
-        marginBottom: 6,
-        fontSize: 8  // Aumentado de 6 a 8
+        marginBottom: 3,
+        fontSize: 8
     },
     infoRow: {
         flexDirection: "row",
