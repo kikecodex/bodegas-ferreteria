@@ -203,34 +203,29 @@ export function ProductForm({ isOpen, onClose, onSave, editProduct, initialCode 
                                     value={formData.code}
                                     onChange={(e) => handleChange("code", e.target.value)}
                                     placeholder="Código de barras, SKU o dejar vacío"
-                                    disabled={isEditing}
                                     className="flex-1"
                                 />
-                                {!isEditing && (
-                                    <>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => {
-                                                // Generar código manual con prefijo MAN- y timestamp
-                                                const timestamp = Date.now().toString(36).toUpperCase();
-                                                const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-                                                handleChange("code", `MAN-${timestamp}${random}`);
-                                            }}
-                                            title="Generar código manual"
-                                        >
-                                            <Hash className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => setShowScanner(true)}
-                                            title="Escanear código de barras"
-                                        >
-                                            <Barcode className="h-4 w-4" />
-                                        </Button>
-                                    </>
-                                )}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        // Generar código manual con prefijo MAN- y timestamp
+                                        const timestamp = Date.now().toString(36).toUpperCase();
+                                        const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+                                        handleChange("code", `MAN-${timestamp}${random}`);
+                                    }}
+                                    title="Generar código manual"
+                                >
+                                    <Hash className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowScanner(true)}
+                                    title="Escanear código de barras"
+                                >
+                                    <Barcode className="h-4 w-4" />
+                                </Button>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
                                 Para productos sin código de barras (alambre, tubos, etc.) deja vacío o genera uno manual
