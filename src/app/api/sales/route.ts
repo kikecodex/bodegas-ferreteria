@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Obtener productos para validar stock (filtrado por tenant)
+        // Obtener productos para calcular totales (metadata - no requiere transacción)
         const productIds = items.map((item: { productId: string }) => item.productId);
         const products = await prisma.product.findMany({
             where: {
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
 
         const productMap = new Map(products.map(p => [p.id, p]));
 
-        // Validar stock disponible
+        // Validar que todos los productos existen
         for (const item of items) {
             const product = productMap.get(item.productId);
             if (!product) {
@@ -175,15 +175,9 @@ export async function POST(request: NextRequest) {
                     { status: 400 }
                 );
             }
-            if (product.stock < item.quantity) {
-                return NextResponse.json(
-                    { error: `Stock insuficiente para ${product.name}. Disponible: ${product.stock}` },
-                    { status: 400 }
-                );
-            }
         }
 
-        // Calcular totales
+        // Calcular totales (usa metadata de productos, no requiere transacción)
         let subtotal = 0;
         let totalDiscount = 0;
         let taxableAmount = 0;
@@ -226,23 +220,6 @@ export async function POST(request: NextRequest) {
         const paid = effectivePaymentMethod === "CREDITO" ? 0 : (amountPaid || total);
         const change = effectivePaymentMethod === "CREDITO" ? 0 : Math.max(0, paid - total);
 
-        // Generar número de venta (por tenant)
-        const lastSale = await prisma.sale.findFirst({
-            where: { tenantId: tenant.tenantId },
-            orderBy: { createdAt: "desc" },
-            select: { number: true }
-        });
-
-        const today = new Date();
-        const prefix = `V${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}`;
-        let sequence = 1;
-
-        if (lastSale?.number?.startsWith(prefix)) {
-            sequence = parseInt(lastSale.number.slice(-6)) + 1;
-        }
-
-        const saleNumber = `${prefix}${String(sequence).padStart(6, "0")}`;
-
         // Obtener usuario por defecto para POS (crear si no existe, asociado al tenant)
         let defaultUser = await prisma.user.findFirst({
             where: {
@@ -263,9 +240,40 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Crear venta con transacción
+        // TRANSACCIÓN ATÓMICA: número de venta + validación de stock + creación + descuento de stock
         const sale = await prisma.$transaction(async (tx) => {
-            // 1. Crear la venta
+            // 1. Generar número de venta DENTRO de la transacción (evita duplicados por race condition)
+            const lastSale = await tx.sale.findFirst({
+                where: { tenantId: tenant.tenantId },
+                orderBy: { createdAt: "desc" },
+                select: { number: true }
+            });
+
+            const today = new Date();
+            const prefix = `V${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}`;
+            let sequence = 1;
+
+            if (lastSale?.number?.startsWith(prefix)) {
+                sequence = parseInt(lastSale.number.slice(-6)) + 1;
+            }
+
+            const saleNumber = `${prefix}${String(sequence).padStart(6, "0")}`;
+
+            // 2. Validar stock DENTRO de la transacción (evita stock negativo por race condition)
+            for (const item of items) {
+                const currentProduct = await tx.product.findUnique({
+                    where: { id: item.productId },
+                    select: { stock: true, name: true }
+                });
+                if (!currentProduct) {
+                    throw new Error(`Producto ${item.productId} no encontrado`);
+                }
+                if (currentProduct.stock < item.quantity) {
+                    throw new Error(`Stock insuficiente para ${currentProduct.name}. Disponible: ${currentProduct.stock}`);
+                }
+            }
+
+            // 3. Crear la venta
             const newSale = await tx.sale.create({
                 data: {
                     number: saleNumber,
@@ -292,10 +300,13 @@ export async function POST(request: NextRequest) {
                 }
             });
 
-            // 2. Descontar stock y registrar movimientos
+            // 4. Descontar stock y registrar movimientos
             for (const item of items) {
-                const product = productMap.get(item.productId)!;
-                const newStock = product.stock - item.quantity;
+                const currentProduct = await tx.product.findUnique({
+                    where: { id: item.productId },
+                    select: { stock: true }
+                });
+                const newStock = (currentProduct?.stock || 0) - item.quantity;
 
                 // Actualizar stock
                 await tx.product.update({
@@ -309,7 +320,7 @@ export async function POST(request: NextRequest) {
                         productId: item.productId,
                         type: "SALIDA",
                         quantity: -item.quantity,
-                        previousStock: product.stock,
+                        previousStock: currentProduct?.stock || 0,
                         newStock,
                         reason: "Venta",
                         reference: saleNumber

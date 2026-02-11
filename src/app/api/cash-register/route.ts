@@ -53,7 +53,18 @@ export async function GET() {
                 select: { total: true }
             });
 
-            const oldTotalSales = oldSales.reduce((sum, s) => sum + s.total, 0);
+            // También incluir notas de venta del día (consistente con caja activa)
+            const oldSalesNotes = await prisma.salesNote.findMany({
+                where: {
+                    createdAt: { gte: openedDayStart, lte: openedDayEnd },
+                    status: "COMPLETADA",
+                    tenantId: tenant.tenantId
+                },
+                select: { total: true }
+            });
+
+            const oldTotalSales = oldSales.reduce((sum, s) => sum + s.total, 0)
+                + oldSalesNotes.reduce((sum, n) => sum + n.total, 0);
             const expectedAmount = activeCash.openingAmount + oldTotalSales;
 
             await prisma.cashRegister.update({
