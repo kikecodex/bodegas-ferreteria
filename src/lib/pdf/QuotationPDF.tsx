@@ -58,8 +58,11 @@ const TICKET_WIDTH = 204.3;
 // Estilos OPTIMIZADOS para impresora térmica POS-80 (igual que InvoicePDF)
 const styles = StyleSheet.create({
     page: {
-        padding: 4,
-        paddingTop: 2,
+        paddingTop: 0,     // ← CERO margen arriba: logo pegado al borde del corte
+        paddingLeft: 4,
+        paddingRight: 4,
+        paddingBottom: 4,
+        marginTop: 0,
         fontSize: 9,
         fontFamily: "Helvetica-Bold",
         width: TICKET_WIDTH,
