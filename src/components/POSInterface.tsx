@@ -376,32 +376,21 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
         }
     };
 
-    // Imprimir PDF directamente (abre diálogo de impresión del sistema)
+    // Imprimir PDF — Abre en ventana popup que NO desaparece
     const openPDF = (saleId: string) => {
-        // Crear iframe oculto para cargar el PDF
-        const printFrame = document.createElement('iframe');
-        printFrame.style.position = 'fixed';
-        printFrame.style.right = '0';
-        printFrame.style.bottom = '0';
-        printFrame.style.width = '0';
-        printFrame.style.height = '0';
-        printFrame.style.border = 'none';
-        printFrame.src = `/api/sales/${saleId}/pdf`;
+        const printUrl = `/api/sales/${saleId}/pdf`;
+        const popup = window.open(
+            printUrl,
+            'ImprimirTicket',
+            'width=450,height=700,left=100,top=100,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
+        );
 
-        document.body.appendChild(printFrame);
-
-        // Esperar a que el PDF cargue y abrir diálogo de impresión
-        printFrame.onload = () => {
-            setTimeout(() => {
-                printFrame.contentWindow?.focus();
-                printFrame.contentWindow?.print();
-
-                // Remover iframe después de un tiempo
-                setTimeout(() => {
-                    document.body.removeChild(printFrame);
-                }, 1000);
-            }, 500);
-        };
+        if (popup) {
+            popup.focus();
+        } else {
+            // Si el popup fue bloqueado, abrir en nueva pestaña
+            window.open(printUrl, '_blank');
+        }
     };
 
     // Cerrar modal de venta completada
