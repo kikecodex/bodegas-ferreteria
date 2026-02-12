@@ -60,8 +60,11 @@ const TICKET_WIDTH = 204.3;
 // Estilos OPTIMIZADOS para impresora térmica POS-80
 const styles = StyleSheet.create({
     page: {
-        padding: 2,
-        paddingTop: 0,  // Eliminar espacio arriba para corte térmico
+        paddingTop: 0,     // ← CERO margen arriba: logo pegado al borde del corte
+        paddingLeft: 2,
+        paddingRight: 2,
+        paddingBottom: 2,
+        marginTop: 0,      // Asegurar que no haya margen de página
         fontSize: 9,
         fontFamily: "Helvetica-Bold",
         width: TICKET_WIDTH,
