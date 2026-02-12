@@ -845,8 +845,12 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                 <Button
                                     className="flex-1"
                                     onClick={() => {
-                                        openPDF(completedSale.id);
-                                        closeCompletedModal();
+                                        // Abrir PDF en nueva pestaña (más confiable que popup)
+                                        window.open(`/api/sales/${completedSale.id}/pdf`, '_blank');
+                                        // Cerrar modal DESPUÉS de un delay para no robar foco
+                                        setTimeout(() => {
+                                            setCompletedSale(null);
+                                        }, 500);
                                     }}
                                 >
                                     <Printer className="h-4 w-4 mr-2" />
