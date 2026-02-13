@@ -24,7 +24,9 @@ import {
     Loader2,
     ArrowUpRight,
     ArrowDownRight,
-    CreditCard
+    CreditCard,
+    Wallet,
+    ArrowRight
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -559,6 +561,42 @@ export default function ReportesPage() {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Reportes Detallados */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <a href="/reportes/facturas" target="_blank" rel="noopener noreferrer">
+                                <Card className="hover:border-green-500 hover:shadow-md transition-all cursor-pointer group">
+                                    <CardContent className="p-6 flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                            <Receipt className="h-6 w-6 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold">Reporte de Comprobantes Emitidos</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Boletas y Facturas con detalle fiscal e IGV
+                                            </p>
+                                        </div>
+                                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-green-500 transition-colors" />
+                                    </CardContent>
+                                </Card>
+                            </a>
+                            <a href="/reportes/caja-diaria" target="_blank" rel="noopener noreferrer">
+                                <Card className="hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group">
+                                    <CardContent className="p-6 flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                                            <Wallet className="h-6 w-6 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold">Reporte de Caja Diaria</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Historial de apertura/cierre con diferencias
+                                            </p>
+                                        </div>
+                                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                                    </CardContent>
+                                </Card>
+                            </a>
+                        </div>
                     </div>
                 )}
             </main>
