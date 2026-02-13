@@ -349,37 +349,73 @@ export default function ReportesPage() {
                         <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
                     </div>
                 ) : stats && (
-                    <div className="p-6 space-y-6">
+                    <div className="p-6 space-y-4">
+                        {/* Reportes Detallados - ARRIBA */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <a href="/reportes/facturas" target="_blank" rel="noopener noreferrer">
+                                <Card className="hover:border-green-500 hover:shadow-md transition-all cursor-pointer group">
+                                    <CardContent className="p-4 flex items-center gap-4">
+                                        <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                                            <Receipt className="h-5 w-5 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold">Reporte de Comprobantes Emitidos</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Boletas y Facturas con detalle fiscal e IGV
+                                            </p>
+                                        </div>
+                                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-green-500 transition-colors" />
+                                    </CardContent>
+                                </Card>
+                            </a>
+                            <a href="/reportes/caja-diaria" target="_blank" rel="noopener noreferrer">
+                                <Card className="hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group">
+                                    <CardContent className="p-4 flex items-center gap-4">
+                                        <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                                            <Wallet className="h-5 w-5 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold">Reporte de Caja Diaria</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Historial de apertura/cierre con diferencias
+                                            </p>
+                                        </div>
+                                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                                    </CardContent>
+                                </Card>
+                            </a>
+                        </div>
+
                         {/* Card de Fecha Seleccionada */}
                         {selectedDate && stats.ventas.fechaSeleccionada !== undefined && (
                             <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
-                                <CardContent className="p-6">
+                                <CardContent className="p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Calendar className="h-6 w-6" />
-                                                <p className="text-white/80 text-lg font-medium">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <Calendar className="h-5 w-5" />
+                                                <p className="text-white/80 text-sm font-medium">
                                                     Ventas del {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                                                 </p>
                                             </div>
-                                            <p className="text-4xl font-bold">S/ {stats.ventas.fechaSeleccionada.toFixed(2)}</p>
+                                            <p className="text-3xl font-bold">S/ {stats.ventas.fechaSeleccionada.toFixed(2)}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-3xl font-bold">{stats.cantidadVentas.fechaSeleccionada}</p>
-                                            <p className="text-white/80">transacciones</p>
+                                            <p className="text-2xl font-bold">{stats.cantidadVentas.fechaSeleccionada}</p>
+                                            <p className="text-white/80 text-sm">transacciones</p>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
                         )}
 
-                        {/* KPIs Principales */}
-                        <div className="grid grid-cols-4 gap-4">
+                        {/* KPIs Principales - Compactos */}
+                        <div className="grid grid-cols-4 gap-3">
                             <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <DollarSign className="h-8 w-8 opacity-80" />
-                                        <Badge variant="secondary" className="bg-white/20 text-white">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <DollarSign className="h-6 w-6 opacity-80" />
+                                        <Badge variant="secondary" className="bg-white/20 text-white text-xs">
                                             {variation >= 0 ? (
                                                 <ArrowUpRight className="h-3 w-3 mr-1" />
                                             ) : (
@@ -388,44 +424,44 @@ export default function ReportesPage() {
                                             {Math.abs(variation).toFixed(1)}%
                                         </Badge>
                                     </div>
-                                    <p className="text-white/80 text-sm">Ventas Hoy</p>
-                                    <p className="text-3xl font-bold">S/ {stats.ventas.hoy.toFixed(2)}</p>
-                                    <p className="text-sm text-white/60 mt-1">
+                                    <p className="text-white/80 text-xs">Ventas Hoy</p>
+                                    <p className="text-2xl font-bold">S/ {stats.ventas.hoy.toFixed(2)}</p>
+                                    <p className="text-xs text-white/60">
                                         Ayer: S/ {stats.ventas.ayer.toFixed(2)}
                                     </p>
                                 </CardContent>
                             </Card>
 
                             <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <ShoppingCart className="h-8 w-8 opacity-80" />
-                                        <Calendar className="h-5 w-5 opacity-60" />
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <ShoppingCart className="h-6 w-6 opacity-80" />
+                                        <Calendar className="h-4 w-4 opacity-60" />
                                     </div>
-                                    <p className="text-white/80 text-sm">Ventas del Mes</p>
-                                    <p className="text-3xl font-bold">S/ {stats.ventas.mes.toFixed(2)}</p>
-                                    <p className="text-sm text-white/60 mt-1">
+                                    <p className="text-white/80 text-xs">Ventas del Mes</p>
+                                    <p className="text-2xl font-bold">S/ {stats.ventas.mes.toFixed(2)}</p>
+                                    <p className="text-xs text-white/60">
                                         {stats.cantidadVentas.mes} transacciones
                                     </p>
                                 </CardContent>
                             </Card>
 
                             <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <Package className="h-8 w-8 opacity-80" />
-                                        <Badge variant="secondary" className="bg-white/20 text-white">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <Package className="h-6 w-6 opacity-80" />
+                                        <Badge variant="secondary" className="bg-white/20 text-white text-xs">
                                             {stats.productos.total}
                                         </Badge>
                                     </div>
-                                    <p className="text-white/80 text-sm">Productos</p>
-                                    <div className="flex gap-4 mt-2">
+                                    <p className="text-white/80 text-xs">Productos</p>
+                                    <div className="flex gap-3 mt-1">
                                         <div>
-                                            <p className="text-2xl font-bold">{stats.productos.sinStock}</p>
+                                            <p className="text-xl font-bold">{stats.productos.sinStock}</p>
                                             <p className="text-xs text-white/60">Sin stock</p>
                                         </div>
                                         <div>
-                                            <p className="text-2xl font-bold">{stats.productos.stockBajo}</p>
+                                            <p className="text-xl font-bold">{stats.productos.stockBajo}</p>
                                             <p className="text-xs text-white/60">Stock bajo</p>
                                         </div>
                                     </div>
@@ -433,40 +469,40 @@ export default function ReportesPage() {
                             </Card>
 
                             <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <Users className="h-8 w-8 opacity-80" />
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <Users className="h-6 w-6 opacity-80" />
                                         {stats.clientes.nuevosHoy > 0 && (
-                                            <Badge variant="secondary" className="bg-white/20 text-white">
+                                            <Badge variant="secondary" className="bg-white/20 text-white text-xs">
                                                 +{stats.clientes.nuevosHoy} hoy
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="text-white/80 text-sm">Clientes</p>
-                                    <p className="text-3xl font-bold">{stats.clientes.total}</p>
-                                    <p className="text-sm text-white/60 mt-1">
+                                    <p className="text-white/80 text-xs">Clientes</p>
+                                    <p className="text-2xl font-bold">{stats.clientes.total}</p>
+                                    <p className="text-xs text-white/60">
                                         Registrados en el sistema
                                     </p>
                                 </CardContent>
                             </Card>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-2 gap-4">
                             {/* Ventas por Método de Pago */}
                             <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <BarChart3 className="h-5 w-5" />
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="flex items-center gap-2 text-base">
+                                        <BarChart3 className="h-4 w-4" />
                                         Ventas por Método de Pago
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     {Object.keys(stats.ventasPorMetodo).length === 0 ? (
-                                        <p className="text-muted-foreground text-center py-8">
+                                        <p className="text-muted-foreground text-center py-6">
                                             No hay ventas en el período
                                         </p>
                                     ) : (
-                                        <div className="space-y-4">
+                                        <div className="space-y-3">
                                             {Object.entries(stats.ventasPorMetodo)
                                                 .sort((a, b) => b[1] - a[1])
                                                 .map(([method, amount]) => {
@@ -494,22 +530,22 @@ export default function ReportesPage() {
 
                             {/* Productos con Stock Bajo */}
                             <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <TrendingDown className="h-5 w-5 text-amber-500" />
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="flex items-center gap-2 text-base">
+                                        <TrendingDown className="h-4 w-4 text-amber-500" />
                                         Productos con Menor Stock
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     {stats.topProductos.length === 0 ? (
-                                        <p className="text-muted-foreground text-center py-8">
+                                        <p className="text-muted-foreground text-center py-6">
                                             No hay productos con stock
                                         </p>
                                     ) : (
-                                        <div className="space-y-3">
+                                        <div className="space-y-2">
                                             {stats.topProductos.map((product, index) => (
                                                 <div key={product.id} className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold">
+                                                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
                                                         {index + 1}
                                                     </div>
                                                     <div className="flex-1">
@@ -529,74 +565,38 @@ export default function ReportesPage() {
 
                         {/* Resumen de Período */}
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp className="h-5 w-5 text-green-500" />
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <TrendingUp className="h-4 w-4 text-green-500" />
                                     Resumen de Ventas
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-3 gap-6 text-center">
-                                    <div className="p-4 bg-muted rounded-lg">
-                                        <p className="text-sm text-muted-foreground">Hoy</p>
-                                        <p className="text-2xl font-bold">S/ {stats.ventas.hoy.toFixed(2)}</p>
-                                        <p className="text-sm text-muted-foreground">
+                                <div className="grid grid-cols-3 gap-4 text-center">
+                                    <div className="p-3 bg-muted rounded-lg">
+                                        <p className="text-xs text-muted-foreground">Hoy</p>
+                                        <p className="text-xl font-bold">S/ {stats.ventas.hoy.toFixed(2)}</p>
+                                        <p className="text-xs text-muted-foreground">
                                             {stats.cantidadVentas.hoy} ventas
                                         </p>
                                     </div>
-                                    <div className="p-4 bg-muted rounded-lg">
-                                        <p className="text-sm text-muted-foreground">Esta Semana</p>
-                                        <p className="text-2xl font-bold">S/ {stats.ventas.semana.toFixed(2)}</p>
-                                        <p className="text-sm text-muted-foreground">
+                                    <div className="p-3 bg-muted rounded-lg">
+                                        <p className="text-xs text-muted-foreground">Esta Semana</p>
+                                        <p className="text-xl font-bold">S/ {stats.ventas.semana.toFixed(2)}</p>
+                                        <p className="text-xs text-muted-foreground">
                                             {stats.cantidadVentas.semana} ventas
                                         </p>
                                     </div>
-                                    <div className="p-4 bg-muted rounded-lg">
-                                        <p className="text-sm text-muted-foreground">Este Mes</p>
-                                        <p className="text-2xl font-bold">S/ {stats.ventas.mes.toFixed(2)}</p>
-                                        <p className="text-sm text-muted-foreground">
+                                    <div className="p-3 bg-muted rounded-lg">
+                                        <p className="text-xs text-muted-foreground">Este Mes</p>
+                                        <p className="text-xl font-bold">S/ {stats.ventas.mes.toFixed(2)}</p>
+                                        <p className="text-xs text-muted-foreground">
                                             {stats.cantidadVentas.mes} ventas
                                         </p>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
-
-                        {/* Reportes Detallados */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <a href="/reportes/facturas" target="_blank" rel="noopener noreferrer">
-                                <Card className="hover:border-green-500 hover:shadow-md transition-all cursor-pointer group">
-                                    <CardContent className="p-6 flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                                            <Receipt className="h-6 w-6 text-white" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="font-bold">Reporte de Comprobantes Emitidos</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Boletas y Facturas con detalle fiscal e IGV
-                                            </p>
-                                        </div>
-                                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-green-500 transition-colors" />
-                                    </CardContent>
-                                </Card>
-                            </a>
-                            <a href="/reportes/caja-diaria" target="_blank" rel="noopener noreferrer">
-                                <Card className="hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group">
-                                    <CardContent className="p-6 flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                                            <Wallet className="h-6 w-6 text-white" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="font-bold">Reporte de Caja Diaria</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Historial de apertura/cierre con diferencias
-                                            </p>
-                                        </div>
-                                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
-                                    </CardContent>
-                                </Card>
-                            </a>
-                        </div>
                     </div>
                 )}
             </main>
