@@ -26,7 +26,8 @@ import {
     ArrowDownRight,
     CreditCard,
     Wallet,
-    ArrowRight
+    ArrowRight,
+    Truck
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -61,6 +62,7 @@ interface DashboardStats {
         cantidad: number;
     }>;
     ventasPorMetodo: Record<string, number>;
+    egresosPorMetodo: Record<string, number>;
 }
 
 const navItems = [
@@ -183,6 +185,19 @@ export default function ReportesPage() {
                     cantidad: p.stock
                 }));
 
+            // Egresos por método de pago (compras del día)
+            const purchasesRes = await fetch("/api/purchases?limit=1000");
+            const purchasesData = purchasesRes.ok ? await purchasesRes.json() : { purchases: [] };
+            const purchases = purchasesData.purchases || [];
+
+            const egresosPorMetodo: Record<string, number> = {};
+            purchases.forEach((p: { createdAt: string; paymentMethod?: string; total: number; status: string }) => {
+                if (getSaleDateStr(p.createdAt) === todayStr && p.status === "COMPLETADA") {
+                    const method = p.paymentMethod || "EFECTIVO";
+                    egresosPorMetodo[method] = (egresosPorMetodo[method] || 0) + p.total;
+                }
+            });
+
             setStats({
                 ventas: {
                     hoy: totalHoy,
@@ -207,7 +222,8 @@ export default function ReportesPage() {
                     nuevosHoy: clients.filter((c: { createdAt: string }) => getSaleDateStr(c.createdAt) === todayStr).length
                 },
                 topProductos,
-                ventasPorMetodo
+                ventasPorMetodo,
+                egresosPorMetodo
             });
         } catch (error) {
             console.error("Error fetching stats:", error);
@@ -488,43 +504,80 @@ export default function ReportesPage() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            {/* Ventas por Método de Pago */}
+                            {/* Flujo de Caja por Método de Pago */}
                             <Card>
                                 <CardHeader className="pb-2">
                                     <CardTitle className="flex items-center gap-2 text-base">
                                         <BarChart3 className="h-4 w-4" />
-                                        Ventas por Método de Pago
+                                        Flujo de Caja por Método de Pago
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    {Object.keys(stats.ventasPorMetodo).length === 0 ? (
-                                        <p className="text-muted-foreground text-center py-6">
-                                            No hay ventas en el período
-                                        </p>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {Object.entries(stats.ventasPorMetodo)
-                                                .sort((a, b) => b[1] - a[1])
-                                                .map(([method, amount]) => {
-                                                    const total = Object.values(stats.ventasPorMetodo).reduce((a, b) => a + b, 0);
-                                                    const percent = (amount / total) * 100;
+                                    {(() => {
+                                        const allMethods = new Set([
+                                            ...Object.keys(stats.ventasPorMetodo),
+                                            ...Object.keys(stats.egresosPorMetodo)
+                                        ]);
+                                        if (allMethods.size === 0) {
+                                            return (
+                                                <p className="text-muted-foreground text-center py-6">
+                                                    No hay movimientos hoy
+                                                </p>
+                                            );
+                                        }
+                                        const totalIngresos = Object.values(stats.ventasPorMetodo).reduce((a, b) => a + b, 0);
+                                        const totalEgresos = Object.values(stats.egresosPorMetodo).reduce((a, b) => a + b, 0);
+                                        return (
+                                            <div className="space-y-4">
+                                                {Array.from(allMethods).sort().map((method) => {
+                                                    const ingreso = stats.ventasPorMetodo[method] || 0;
+                                                    const egreso = stats.egresosPorMetodo[method] || 0;
+                                                    const neto = ingreso - egreso;
                                                     return (
-                                                        <div key={method}>
-                                                            <div className="flex justify-between text-sm mb-1">
-                                                                <span className="font-medium">{method}</span>
-                                                                <span>S/ {amount.toFixed(2)}</span>
+                                                        <div key={method} className="space-y-1">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="font-medium text-sm">{method}</span>
+                                                                <span className={`text-sm font-bold ${neto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                    Neto: S/ {neto.toFixed(2)}
+                                                                </span>
                                                             </div>
-                                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                                            <div className="flex gap-2 text-xs text-muted-foreground">
+                                                                <span className="text-green-600">▲ Ingreso: S/ {ingreso.toFixed(2)}</span>
+                                                                <span className="text-red-600">▼ Egreso: S/ {egreso.toFixed(2)}</span>
+                                                            </div>
+                                                            <div className="flex gap-1 h-2">
                                                                 <div
-                                                                    className="h-full bg-primary rounded-full transition-all"
-                                                                    style={{ width: `${percent}%` }}
+                                                                    className="bg-green-500 rounded-full transition-all"
+                                                                    style={{ width: `${totalIngresos > 0 ? (ingreso / Math.max(totalIngresos, totalEgresos)) * 100 : 0}%` }}
+                                                                />
+                                                                <div
+                                                                    className="bg-red-400 rounded-full transition-all"
+                                                                    style={{ width: `${totalEgresos > 0 ? (egreso / Math.max(totalIngresos, totalEgresos)) * 100 : 0}%` }}
                                                                 />
                                                             </div>
                                                         </div>
                                                     );
                                                 })}
-                                        </div>
-                                    )}
+                                                {/* Totales */}
+                                                <div className="border-t pt-3 mt-3">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-green-600 font-medium">Total Ingresos</span>
+                                                        <span className="text-green-600 font-bold">S/ {totalIngresos.toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-red-600 font-medium">Total Egresos</span>
+                                                        <span className="text-red-600 font-bold">S/ {totalEgresos.toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-sm font-bold border-t pt-1 mt-1">
+                                                        <span>Neto del Día</span>
+                                                        <span className={totalIngresos - totalEgresos >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                            S/ {(totalIngresos - totalEgresos).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </CardContent>
                             </Card>
 

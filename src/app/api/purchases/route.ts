@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { supplierId, invoiceNumber, invoiceDate, items, notes } = body;
+        const { supplierId, invoiceNumber, invoiceDate, items, notes, paymentMethod } = body;
 
         if (!supplierId || !items || items.length === 0) {
             return NextResponse.json(
@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
                     tax,
                     total,
                     status: "COMPLETADA",
+                    paymentMethod: paymentMethod || "EFECTIVO",
                     notes: notes || null,
                     tenantId: tenant.tenantId,
                     items: { create: purchaseItems }

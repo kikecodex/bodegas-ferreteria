@@ -456,7 +456,8 @@ model Purchase {
   tax         Float
   total       Float
   
-  status      String    @default("COMPLETADA")
+  status        String    @default("COMPLETADA")
+  paymentMethod String    @default("EFECTIVO")  // EFECTIVO, YAPE, TRANSFERENCIA
   
   notes       String?
   

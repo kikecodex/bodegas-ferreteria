@@ -24,7 +24,9 @@ import {
     Trash2,
     X,
     Check,
-    CreditCard
+    CreditCard,
+    Banknote,
+    Smartphone
 } from "lucide-react";
 
 interface Supplier {
@@ -75,8 +77,9 @@ export default function ComprasPage() {
     const [loadingSuppliers, setLoadingSuppliers] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [invoiceNumber, setInvoiceNumber] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState("EFECTIVO");
     const [showSuccess, setShowSuccess] = useState(false);
-    const [lastPurchase, setLastPurchase] = useState<{ number: string; total: number } | null>(null);
+    const [lastPurchase, setLastPurchase] = useState<{ number: string; total: number; paymentMethod: string } | null>(null);
 
     // Buscar proveedores por nombre/RUC/DNI
     const searchSuppliers = useCallback(async (query: string) => {
@@ -197,6 +200,7 @@ export default function ComprasPage() {
                 body: JSON.stringify({
                     supplierId: selectedSupplier.id,
                     invoiceNumber: invoiceNumber || null,
+                    paymentMethod,
                     items: cart.map(i => ({
                         productId: i.productId,
                         quantity: i.quantity,
@@ -211,10 +215,11 @@ export default function ComprasPage() {
             }
 
             const purchase = await res.json();
-            setLastPurchase({ number: purchase.number, total });
+            setLastPurchase({ number: purchase.number, total, paymentMethod });
             setCart([]);
             setSelectedSupplier(null);
             setInvoiceNumber("");
+            setPaymentMethod("EFECTIVO");
             setShowSuccess(true);
         } catch (error) {
             alert(error instanceof Error ? error.message : "Error");
@@ -449,6 +454,37 @@ export default function ComprasPage() {
                             </CardContent>
                         </Card>
 
+                        {/* Método de Pago */}
+                        <Card>
+                            <CardContent className="p-4">
+                                <label className="text-sm font-medium mb-2 block">Método de Pago (Egreso)</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { value: "EFECTIVO", label: "Efectivo", icon: Banknote, color: "green" },
+                                        { value: "YAPE", label: "Yape", icon: Smartphone, color: "purple" },
+                                        { value: "TRANSFERENCIA", label: "Transferencia", icon: CreditCard, color: "blue" },
+                                    ].map((method) => {
+                                        const Icon = method.icon;
+                                        const isSelected = paymentMethod === method.value;
+                                        return (
+                                            <button
+                                                key={method.value}
+                                                type="button"
+                                                onClick={() => setPaymentMethod(method.value)}
+                                                className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${isSelected
+                                                        ? `border-${method.color}-500 bg-${method.color}-500/10 text-${method.color}-600`
+                                                        : "border-muted hover:border-muted-foreground/30"
+                                                    }`}
+                                            >
+                                                <Icon className={`h-5 w-5 ${isSelected ? `text-${method.color}-500` : "text-muted-foreground"}`} />
+                                                <span className={`text-xs font-medium ${isSelected ? "" : "text-muted-foreground"}`}>{method.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+
                         {/* Totales */}
                         <Card className="bg-green-500/10">
                             <CardContent className="p-4 space-y-2">
@@ -487,8 +523,9 @@ export default function ComprasPage() {
                                 <Check className="h-10 w-10 text-green-500" />
                             </div>
                             <h3 className="text-2xl font-bold mb-2">¡Compra Registrada!</h3>
-                            <p className="text-muted-foreground mb-4">N° {lastPurchase.number}</p>
-                            <p className="text-xl font-bold mb-4">Total: S/ {lastPurchase.total.toFixed(2)}</p>
+                            <p className="text-muted-foreground mb-2">N° {lastPurchase.number}</p>
+                            <p className="text-xl font-bold mb-2">Total: S/ {lastPurchase.total.toFixed(2)}</p>
+                            <Badge className="mb-4">{lastPurchase.paymentMethod}</Badge>
                             <p className="text-sm text-green-600 mb-4">Stock actualizado automáticamente ✓</p>
                             <Button className="w-full" onClick={() => setShowSuccess(false)}>
                                 Continuar
