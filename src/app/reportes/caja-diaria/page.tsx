@@ -252,7 +252,7 @@ export default function ReporteCajaDiariaPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="_blank" rel="noopener noreferrer"
+                                href={item.href} target="app" rel="noopener noreferrer"
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -268,7 +268,7 @@ export default function ReporteCajaDiariaPage() {
                 <div className="p-3 border-t">
                     <a
                         href="/configuracion"
-                        target="_blank"
+                        target="app"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
@@ -295,7 +295,7 @@ export default function ReporteCajaDiariaPage() {
             <main className="flex-1 flex flex-col">
                 <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <a href="/reportes" target="_blank" rel="noopener noreferrer">
+                        <a href="/reportes" target="app" rel="noopener noreferrer">
                             <Button variant="ghost" size="icon">
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>

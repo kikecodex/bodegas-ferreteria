@@ -145,7 +145,7 @@ export function Sidebar() {
                         <a
                             key={item.label}
                             href={item.href}
-                            target="_blank"
+                            target="app"
                             rel="noopener noreferrer"
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive
                                 ? "bg-primary text-primary-foreground"
