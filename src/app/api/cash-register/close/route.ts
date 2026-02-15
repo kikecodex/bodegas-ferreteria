@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
         // Calcular ventas del día de hoy (filtrado por tenant)
         // Excluir ventas a crédito - no representan ingreso en caja
-        const [sales, salesNotes] = await Promise.all([
+        const [sales, salesNotes, purchases] = await Promise.all([
             prisma.sale.findMany({
                 where: {
                     createdAt: { gte: startOfToday },
@@ -63,6 +63,16 @@ export async function POST(request: NextRequest) {
                     total: true,
                     paymentMethod: true
                 }
+            }),
+            // Compras del día pagadas en EFECTIVO (salen de la caja física)
+            prisma.purchase.findMany({
+                where: {
+                    createdAt: { gte: startOfToday },
+                    status: "COMPLETADA",
+                    tenantId: tenant.tenantId,
+                    paymentMethod: "EFECTIVO"
+                },
+                select: { total: true }
             })
         ]);
 
@@ -82,7 +92,10 @@ export async function POST(request: NextRequest) {
             totalSales += note.total;
         }
 
-        const expectedAmount = activeCash.openingAmount + totalSales;
+        // Restar compras en efectivo (egresos de caja física)
+        const totalPurchasesCash = purchases.reduce((sum, p) => sum + p.total, 0);
+
+        const expectedAmount = activeCash.openingAmount + totalSales - totalPurchasesCash;
         const actualClosing = parseFloat(closingAmount) || 0;
         const difference = actualClosing - expectedAmount;
 
@@ -107,6 +120,7 @@ export async function POST(request: NextRequest) {
             summary: {
                 openingAmount: activeCash.openingAmount,
                 cashSales: salesByMethod["EFECTIVO"] || 0,
+                totalPurchasesCash,
                 expectedAmount,
                 closingAmount: actualClosing,
                 difference,

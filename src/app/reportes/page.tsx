@@ -367,7 +367,7 @@ export default function ReportesPage() {
                 ) : stats && (
                     <div className="p-6 space-y-4">
                         {/* Reportes Detallados - ARRIBA */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <a href="/reportes/facturas" target="_blank" rel="noopener noreferrer">
                                 <Card className="hover:border-green-500 hover:shadow-md transition-all cursor-pointer group">
                                     <CardContent className="p-4 flex items-center gap-4">
@@ -375,9 +375,9 @@ export default function ReportesPage() {
                                             <Receipt className="h-5 w-5 text-white" />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-bold">Reporte de Comprobantes Emitidos</p>
+                                            <p className="font-bold">Comprobantes</p>
                                             <p className="text-sm text-muted-foreground">
-                                                Boletas y Facturas con detalle fiscal e IGV
+                                                Boletas y Facturas
                                             </p>
                                         </div>
                                         <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-green-500 transition-colors" />
@@ -385,18 +385,34 @@ export default function ReportesPage() {
                                 </Card>
                             </a>
                             <a href="/reportes/caja-diaria" target="_blank" rel="noopener noreferrer">
-                                <Card className="hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer group">
+                                <Card className="hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group">
                                     <CardContent className="p-4 flex items-center gap-4">
                                         <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
                                             <Wallet className="h-5 w-5 text-white" />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-bold">Reporte de Caja Diaria</p>
+                                            <p className="font-bold">Caja Diaria</p>
                                             <p className="text-sm text-muted-foreground">
-                                                Historial de apertura/cierre con diferencias
+                                                Apertura/cierre y diferencias
                                             </p>
                                         </div>
                                         <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                                    </CardContent>
+                                </Card>
+                            </a>
+                            <a href="/reportes/compras" target="_blank" rel="noopener noreferrer">
+                                <Card className="hover:border-red-500 hover:shadow-md transition-all cursor-pointer group">
+                                    <CardContent className="p-4 flex items-center gap-4">
+                                        <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
+                                            <Truck className="h-5 w-5 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold">Compras</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Egresos por proveedor
+                                            </p>
+                                        </div>
+                                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-red-500 transition-colors" />
                                     </CardContent>
                                 </Card>
                             </a>
