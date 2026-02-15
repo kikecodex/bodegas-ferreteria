@@ -338,89 +338,52 @@ export default function ReporteComprasPage() {
                         </CardContent>
                     </Card>
 
-                    {/* KPI Cards */}
+                    {/* KPIs - Compactos */}
                     {kpis && (
-                        <div className="grid grid-cols-4 gap-4">
-                            <Card className="bg-gradient-to-br from-red-500 to-rose-600 text-white">
-                                <CardContent className="p-5">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <Truck className="h-7 w-7 opacity-80" />
-                                        <Badge variant="secondary" className="bg-white/20 text-white text-xs">
-                                            {kpis.cantidadCompras}
-                                        </Badge>
+                        <div className="grid grid-cols-4 gap-3">
+                            <Card className="border-l-4 border-l-red-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <Truck className="h-5 w-5 text-red-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">Total Compras</p>
+                                        <p className="text-lg font-bold leading-tight">S/ {kpis.totalCompras.toFixed(2)}</p>
                                     </div>
-                                    <p className="text-white/80 text-sm">Total Compras</p>
-                                    <p className="text-2xl font-bold">S/ {kpis.totalCompras.toFixed(2)}</p>
-                                    <p className="text-xs text-white/60 mt-1">
-                                        {kpis.proveedoresUnicos} proveedor{kpis.proveedoresUnicos !== 1 ? "es" : ""}
-                                    </p>
+                                    <Badge variant="outline" className="ml-auto text-xs shrink-0">{kpis.cantidadCompras}</Badge>
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
-                                <CardContent className="p-5">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <Banknote className="h-7 w-7 opacity-80" />
+                            <Card className="border-l-4 border-l-amber-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <Banknote className="h-5 w-5 text-amber-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">Efectivo</p>
+                                        <p className="text-lg font-bold leading-tight">S/ {kpis.comprasEfectivo.toFixed(2)}</p>
                                     </div>
-                                    <p className="text-white/80 text-sm">Compras en Efectivo</p>
-                                    <p className="text-2xl font-bold">S/ {kpis.comprasEfectivo.toFixed(2)}</p>
-                                    <p className="text-xs text-white/60 mt-1">
-                                        Sale de la caja física
-                                    </p>
+                                    <span className="ml-auto text-xs text-muted-foreground shrink-0">Sale de caja</span>
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                                <CardContent className="p-5">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <Wallet className="h-7 w-7 opacity-80" />
+                            <Card className="border-l-4 border-l-blue-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <Wallet className="h-5 w-5 text-blue-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">Yape/Transfer.</p>
+                                        <p className="text-lg font-bold leading-tight">S/ {kpis.comprasOtros.toFixed(2)}</p>
                                     </div>
-                                    <p className="text-white/80 text-sm">Compras Yape/Transfer.</p>
-                                    <p className="text-2xl font-bold">S/ {kpis.comprasOtros.toFixed(2)}</p>
-                                    <p className="text-xs text-white/60 mt-1">
-                                        No afecta caja física
-                                    </p>
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white">
-                                <CardContent className="p-5">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <TrendingUp className="h-7 w-7 opacity-80" />
+                            <Card className="border-l-4 border-l-purple-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <TrendingUp className="h-5 w-5 text-purple-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">IGV (18%)</p>
+                                        <p className="text-lg font-bold leading-tight">S/ {kpis.igvTotal.toFixed(2)}</p>
                                     </div>
-                                    <p className="text-white/80 text-sm">IGV Total (18%)</p>
-                                    <p className="text-2xl font-bold">S/ {kpis.igvTotal.toFixed(2)}</p>
-                                    <p className="text-xs text-white/60 mt-1">
-                                        Base: S/ {kpis.subtotalTotal.toFixed(2)}
-                                    </p>
+                                    <span className="ml-auto text-xs text-muted-foreground shrink-0">Base: S/ {kpis.subtotalTotal.toFixed(2)}</span>
                                 </CardContent>
                             </Card>
                         </div>
-                    )}
-
-                    {/* Desglose por Método de Pago */}
-                    {kpis && Object.keys(kpis.comprasPorMetodo).length > 0 && (
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <DollarSign className="h-4 w-4" />
-                                    Desglose por Método de Pago
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-4 gap-3">
-                                    {Object.entries(kpis.comprasPorMetodo).sort().map(([method, amount]) => (
-                                        <div key={method} className="p-3 bg-muted rounded-lg text-center">
-                                            <p className="text-xs text-muted-foreground">{method}</p>
-                                            <p className="text-lg font-bold">S/ {amount.toFixed(2)}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {((amount / kpis.totalCompras) * 100).toFixed(0)}% del total
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
                     )}
 
                     {/* Tabla */}

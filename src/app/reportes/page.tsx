@@ -441,80 +441,54 @@ export default function ReportesPage() {
                             </Card>
                         )}
 
-                        {/* KPIs Principales - Compactos */}
+                        {/* KPIs - Barra compacta */}
                         <div className="grid grid-cols-4 gap-3">
-                            <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <DollarSign className="h-6 w-6 opacity-80" />
-                                        <Badge variant="secondary" className="bg-white/20 text-white text-xs">
-                                            {variation >= 0 ? (
-                                                <ArrowUpRight className="h-3 w-3 mr-1" />
-                                            ) : (
-                                                <ArrowDownRight className="h-3 w-3 mr-1" />
-                                            )}
-                                            {Math.abs(variation).toFixed(1)}%
-                                        </Badge>
+                            <Card className="border-l-4 border-l-green-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <DollarSign className="h-5 w-5 text-green-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">Ventas Hoy</p>
+                                        <p className="text-lg font-bold leading-tight">S/ {stats.ventas.hoy.toFixed(2)}</p>
                                     </div>
-                                    <p className="text-white/80 text-xs">Ventas Hoy</p>
-                                    <p className="text-2xl font-bold">S/ {stats.ventas.hoy.toFixed(2)}</p>
-                                    <p className="text-xs text-white/60">
-                                        Ayer: S/ {stats.ventas.ayer.toFixed(2)}
-                                    </p>
+                                    <Badge variant="outline" className="ml-auto text-xs shrink-0">
+                                        {variation >= 0 ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
+                                        {Math.abs(variation).toFixed(1)}%
+                                    </Badge>
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <ShoppingCart className="h-6 w-6 opacity-80" />
-                                        <Calendar className="h-4 w-4 opacity-60" />
+                            <Card className="border-l-4 border-l-blue-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <ShoppingCart className="h-5 w-5 text-blue-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">Ventas del Mes</p>
+                                        <p className="text-lg font-bold leading-tight">S/ {stats.ventas.mes.toFixed(2)}</p>
                                     </div>
-                                    <p className="text-white/80 text-xs">Ventas del Mes</p>
-                                    <p className="text-2xl font-bold">S/ {stats.ventas.mes.toFixed(2)}</p>
-                                    <p className="text-xs text-white/60">
-                                        {stats.cantidadVentas.mes} transacciones
-                                    </p>
+                                    <span className="ml-auto text-xs text-muted-foreground shrink-0">{stats.cantidadVentas.mes} trans.</span>
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <Package className="h-6 w-6 opacity-80" />
-                                        <Badge variant="secondary" className="bg-white/20 text-white text-xs">
-                                            {stats.productos.total}
-                                        </Badge>
+                            <Card className="border-l-4 border-l-purple-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <Package className="h-5 w-5 text-purple-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">Productos</p>
+                                        <p className="text-lg font-bold leading-tight">{stats.productos.sinStock} <span className="text-sm font-normal text-muted-foreground">sin stock</span> · {stats.productos.stockBajo} <span className="text-sm font-normal text-muted-foreground">bajo</span></p>
                                     </div>
-                                    <p className="text-white/80 text-xs">Productos</p>
-                                    <div className="flex gap-3 mt-1">
-                                        <div>
-                                            <p className="text-xl font-bold">{stats.productos.sinStock}</p>
-                                            <p className="text-xs text-white/60">Sin stock</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xl font-bold">{stats.productos.stockBajo}</p>
-                                            <p className="text-xs text-white/60">Stock bajo</p>
-                                        </div>
-                                    </div>
+                                    <Badge variant="outline" className="ml-auto text-xs shrink-0">{stats.productos.total}</Badge>
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <Users className="h-6 w-6 opacity-80" />
-                                        {stats.clientes.nuevosHoy > 0 && (
-                                            <Badge variant="secondary" className="bg-white/20 text-white text-xs">
-                                                +{stats.clientes.nuevosHoy} hoy
-                                            </Badge>
-                                        )}
+                            <Card className="border-l-4 border-l-orange-500">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <Users className="h-5 w-5 text-orange-500 shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs text-muted-foreground">Clientes</p>
+                                        <p className="text-lg font-bold leading-tight">{stats.clientes.total}</p>
                                     </div>
-                                    <p className="text-white/80 text-xs">Clientes</p>
-                                    <p className="text-2xl font-bold">{stats.clientes.total}</p>
-                                    <p className="text-xs text-white/60">
-                                        Registrados en el sistema
-                                    </p>
+                                    {stats.clientes.nuevosHoy > 0 && (
+                                        <Badge variant="outline" className="ml-auto text-xs text-green-600 shrink-0">+{stats.clientes.nuevosHoy} hoy</Badge>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
