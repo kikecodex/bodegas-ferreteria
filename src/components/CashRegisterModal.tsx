@@ -16,13 +16,15 @@ import {
     Clock,
     Banknote,
     CreditCard,
-    AlertTriangle
+    AlertTriangle,
+    Truck
 } from "lucide-react";
 
 interface CashSummary {
     openingAmount: number;
     totalSales: number;
     salesByMethod: Record<string, number>;
+    totalPurchasesCash: number;
     expectedAmount: number;
     salesCount: number;
 }
@@ -215,6 +217,18 @@ export function CashRegisterModal({ isOpen, onClose, onCashUpdated }: CashRegist
                                                     <span>S/ {(amount as number).toFixed(2)}</span>
                                                 </div>
                                             ))}
+                                        </div>
+                                    )}
+
+                                    {(cashStatus.summary.totalPurchasesCash || 0) > 0 && (
+                                        <div className="border-t pt-2">
+                                            <div className="flex justify-between text-sm text-red-500">
+                                                <span className="flex items-center gap-1">
+                                                    <Truck className="h-3 w-3" />
+                                                    Compras Efectivo
+                                                </span>
+                                                <span>- S/ {cashStatus.summary.totalPurchasesCash.toFixed(2)}</span>
+                                            </div>
                                         </div>
                                     )}
 

@@ -32,8 +32,19 @@ import {
     Wallet,
     Banknote,
     TrendingUp,
+    Eye,
+    EyeOff,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface PurchaseItem {
+    id: string;
+    productName: string;
+    productCode: string;
+    quantity: number;
+    unitCost: number;
+    subtotal: number;
+}
 
 interface PurchaseReport {
     id: string;
@@ -52,6 +63,7 @@ interface PurchaseReport {
         name: string;
         ruc: string;
     };
+    items: PurchaseItem[];
     itemCount: number;
 }
 
@@ -91,6 +103,7 @@ export default function ReporteComprasPage() {
     const [dateFrom, setDateFrom] = useState(() => getLocalDateStr());
     const [dateTo, setDateTo] = useState(() => getLocalDateStr());
     const [methodFilter, setMethodFilter] = useState<string>("all");
+    const [expandedId, setExpandedId] = useState<string | null>(null);
 
     const fetchReport = useCallback(async () => {
         setLoading(true);
@@ -437,6 +450,7 @@ export default function ReporteComprasPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead className="w-10"></TableHead>
                                             <TableHead>Nº Compra</TableHead>
                                             <TableHead>Fecha</TableHead>
                                             <TableHead>Proveedor</TableHead>
@@ -451,52 +465,100 @@ export default function ReporteComprasPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {purchases.map((purchase) => (
-                                            <TableRow key={purchase.id}>
-                                                <TableCell className="font-mono font-medium">
-                                                    {purchase.number}
-                                                </TableCell>
-                                                <TableCell className="text-sm">
-                                                    {formatDate(purchase.createdAt)}
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    {purchase.supplier.name}
-                                                </TableCell>
-                                                <TableCell className="font-mono text-sm">
-                                                    {purchase.supplier.ruc}
-                                                </TableCell>
-                                                <TableCell className="text-sm">
-                                                    {purchase.invoiceNumber || "-"}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={`text-xs ${purchase.paymentMethod === "EFECTIVO"
-                                                            ? "border-amber-500 text-amber-600"
-                                                            : purchase.paymentMethod === "YAPE"
-                                                                ? "border-purple-500 text-purple-600"
-                                                                : "border-blue-500 text-blue-600"
-                                                            }`}
-                                                    >
-                                                        {purchase.paymentMethod}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    {purchase.itemCount}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    S/ {purchase.subtotal.toFixed(2)}
-                                                </TableCell>
-                                                <TableCell className="text-right text-muted-foreground">
-                                                    S/ {purchase.tax.toFixed(2)}
-                                                </TableCell>
-                                                <TableCell className="text-right font-bold">
-                                                    S/ {purchase.total.toFixed(2)}
-                                                </TableCell>
-                                            </TableRow>
+                                            <>
+                                                <TableRow key={purchase.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedId(expandedId === purchase.id ? null : purchase.id)}>
+                                                    <TableCell>
+                                                        <button
+                                                            className="p-1 rounded hover:bg-accent"
+                                                            title="Ver productos"
+                                                        >
+                                                            {expandedId === purchase.id ? (
+                                                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                                            ) : (
+                                                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                                            )}
+                                                        </button>
+                                                    </TableCell>
+                                                    <TableCell className="font-mono font-medium">
+                                                        {purchase.number}
+                                                    </TableCell>
+                                                    <TableCell className="text-sm">
+                                                        {formatDate(purchase.createdAt)}
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">
+                                                        {purchase.supplier.name}
+                                                    </TableCell>
+                                                    <TableCell className="font-mono text-sm">
+                                                        {purchase.supplier.ruc}
+                                                    </TableCell>
+                                                    <TableCell className="text-sm">
+                                                        {purchase.invoiceNumber || "-"}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={`text-xs ${purchase.paymentMethod === "EFECTIVO"
+                                                                ? "border-amber-500 text-amber-600"
+                                                                : purchase.paymentMethod === "YAPE"
+                                                                    ? "border-purple-500 text-purple-600"
+                                                                    : "border-blue-500 text-blue-600"
+                                                                }`}
+                                                        >
+                                                            {purchase.paymentMethod}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {purchase.itemCount}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        S/ {purchase.subtotal.toFixed(2)}
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-muted-foreground">
+                                                        S/ {purchase.tax.toFixed(2)}
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-bold">
+                                                        S/ {purchase.total.toFixed(2)}
+                                                    </TableCell>
+                                                </TableRow>
+                                                {expandedId === purchase.id && (
+                                                    <TableRow key={`${purchase.id}-items`}>
+                                                        <TableCell colSpan={11} className="p-0">
+                                                            <div className="bg-muted/30 border-y px-8 py-3">
+                                                                <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                                                                    <Package className="h-3 w-3" />
+                                                                    Productos de esta compra ({purchase.items?.length || 0})
+                                                                </p>
+                                                                <table className="w-full text-sm">
+                                                                    <thead>
+                                                                        <tr className="text-xs text-muted-foreground border-b">
+                                                                            <th className="text-left py-1 pr-4">Código</th>
+                                                                            <th className="text-left py-1 pr-4">Producto</th>
+                                                                            <th className="text-center py-1 pr-4">Cantidad</th>
+                                                                            <th className="text-right py-1 pr-4">Costo Unit.</th>
+                                                                            <th className="text-right py-1">Subtotal</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {(purchase.items || []).map((item) => (
+                                                                            <tr key={item.id} className="border-b border-muted last:border-0">
+                                                                                <td className="py-1.5 pr-4 font-mono text-xs text-muted-foreground">{item.productCode}</td>
+                                                                                <td className="py-1.5 pr-4 font-medium">{item.productName}</td>
+                                                                                <td className="py-1.5 pr-4 text-center">{item.quantity}</td>
+                                                                                <td className="py-1.5 pr-4 text-right">S/ {item.unitCost.toFixed(2)}</td>
+                                                                                <td className="py-1.5 text-right font-medium">S/ {item.subtotal.toFixed(2)}</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </>
                                         ))}
                                         {/* Fila de totales */}
                                         <TableRow className="bg-muted/50 font-bold">
-                                            <TableCell colSpan={7} className="text-right">
+                                            <TableCell colSpan={8} className="text-right">
                                                 TOTALES
                                             </TableCell>
                                             <TableCell className="text-right">

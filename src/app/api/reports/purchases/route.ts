@@ -50,6 +50,16 @@ export async function GET(request: NextRequest) {
                 supplier: {
                     select: { id: true, name: true, ruc: true },
                 },
+                items: {
+                    select: {
+                        id: true,
+                        productName: true,
+                        productCode: true,
+                        quantity: true,
+                        unitCost: true,
+                        subtotal: true,
+                    },
+                },
                 _count: {
                     select: { items: true },
                 },
@@ -90,6 +100,7 @@ export async function GET(request: NextRequest) {
             notes: p.notes,
             createdAt: p.createdAt,
             supplier: p.supplier,
+            items: p.items,
             itemCount: p._count.items,
         }));
 
