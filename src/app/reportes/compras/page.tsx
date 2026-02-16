@@ -338,51 +338,31 @@ export default function ReporteComprasPage() {
                         </CardContent>
                     </Card>
 
-                    {/* KPIs - Compactos */}
+                    {/* KPIs - Ultra compacto */}
                     {kpis && (
-                        <div className="grid grid-cols-4 gap-3">
-                            <Card className="border-l-4 border-l-red-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <Truck className="h-5 w-5 text-red-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">Total Compras</p>
-                                        <p className="text-lg font-bold leading-tight">S/ {kpis.totalCompras.toFixed(2)}</p>
-                                    </div>
-                                    <Badge variant="outline" className="ml-auto text-xs shrink-0">{kpis.cantidadCompras}</Badge>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-l-4 border-l-amber-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <Banknote className="h-5 w-5 text-amber-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">Efectivo</p>
-                                        <p className="text-lg font-bold leading-tight">S/ {kpis.comprasEfectivo.toFixed(2)}</p>
-                                    </div>
-                                    <span className="ml-auto text-xs text-muted-foreground shrink-0">Sale de caja</span>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-l-4 border-l-blue-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <Wallet className="h-5 w-5 text-blue-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">Yape/Transfer.</p>
-                                        <p className="text-lg font-bold leading-tight">S/ {kpis.comprasOtros.toFixed(2)}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-l-4 border-l-purple-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <TrendingUp className="h-5 w-5 text-purple-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">IGV (18%)</p>
-                                        <p className="text-lg font-bold leading-tight">S/ {kpis.igvTotal.toFixed(2)}</p>
-                                    </div>
-                                    <span className="ml-auto text-xs text-muted-foreground shrink-0">Base: S/ {kpis.subtotalTotal.toFixed(2)}</span>
-                                </CardContent>
-                            </Card>
+                        <div className="grid grid-cols-4 gap-2">
+                            <div className="flex items-center gap-2 border-l-2 border-l-red-500 bg-card rounded-r px-2 py-1">
+                                <Truck className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">Total</span>
+                                <span className="text-sm font-bold">S/ {kpis.totalCompras.toFixed(2)}</span>
+                                <span className="ml-auto text-[10px] text-muted-foreground">{kpis.cantidadCompras} compras</span>
+                            </div>
+                            <div className="flex items-center gap-2 border-l-2 border-l-amber-500 bg-card rounded-r px-2 py-1">
+                                <Banknote className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">Efectivo</span>
+                                <span className="text-sm font-bold">S/ {kpis.comprasEfectivo.toFixed(2)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 border-l-2 border-l-blue-500 bg-card rounded-r px-2 py-1">
+                                <Wallet className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">Yape/Transf.</span>
+                                <span className="text-sm font-bold">S/ {kpis.comprasOtros.toFixed(2)}</span>
+                            </div>
+                            <div className="flex items-center gap-2 border-l-2 border-l-purple-500 bg-card rounded-r px-2 py-1">
+                                <TrendingUp className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">IGV</span>
+                                <span className="text-sm font-bold">S/ {kpis.igvTotal.toFixed(2)}</span>
+                                <span className="ml-auto text-[10px] text-muted-foreground">Base: S/ {kpis.subtotalTotal.toFixed(2)}</span>
+                            </div>
                         </div>
                     )}
 

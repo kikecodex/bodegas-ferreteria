@@ -441,56 +441,33 @@ export default function ReportesPage() {
                             </Card>
                         )}
 
-                        {/* KPIs - Barra compacta */}
-                        <div className="grid grid-cols-4 gap-3">
-                            <Card className="border-l-4 border-l-green-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <DollarSign className="h-5 w-5 text-green-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">Ventas Hoy</p>
-                                        <p className="text-lg font-bold leading-tight">S/ {stats.ventas.hoy.toFixed(2)}</p>
-                                    </div>
-                                    <Badge variant="outline" className="ml-auto text-xs shrink-0">
-                                        {variation >= 0 ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
-                                        {Math.abs(variation).toFixed(1)}%
-                                    </Badge>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-l-4 border-l-blue-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <ShoppingCart className="h-5 w-5 text-blue-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">Ventas del Mes</p>
-                                        <p className="text-lg font-bold leading-tight">S/ {stats.ventas.mes.toFixed(2)}</p>
-                                    </div>
-                                    <span className="ml-auto text-xs text-muted-foreground shrink-0">{stats.cantidadVentas.mes} trans.</span>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-l-4 border-l-purple-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <Package className="h-5 w-5 text-purple-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">Productos</p>
-                                        <p className="text-lg font-bold leading-tight">{stats.productos.sinStock} <span className="text-sm font-normal text-muted-foreground">sin stock</span> · {stats.productos.stockBajo} <span className="text-sm font-normal text-muted-foreground">bajo</span></p>
-                                    </div>
-                                    <Badge variant="outline" className="ml-auto text-xs shrink-0">{stats.productos.total}</Badge>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-l-4 border-l-orange-500">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <Users className="h-5 w-5 text-orange-500 shrink-0" />
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">Clientes</p>
-                                        <p className="text-lg font-bold leading-tight">{stats.clientes.total}</p>
-                                    </div>
-                                    {stats.clientes.nuevosHoy > 0 && (
-                                        <Badge variant="outline" className="ml-auto text-xs text-green-600 shrink-0">+{stats.clientes.nuevosHoy} hoy</Badge>
-                                    )}
-                                </CardContent>
-                            </Card>
+                        {/* KPIs - Ultra compacto */}
+                        <div className="grid grid-cols-4 gap-2">
+                            <div className="flex items-center gap-2 border-l-2 border-l-green-500 bg-card rounded-r px-2 py-1">
+                                <DollarSign className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">Hoy</span>
+                                <span className="text-sm font-bold">S/ {stats.ventas.hoy.toFixed(2)}</span>
+                                <span className="ml-auto text-[10px] text-muted-foreground">{variation >= 0 ? "↑" : "↓"}{Math.abs(variation).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex items-center gap-2 border-l-2 border-l-blue-500 bg-card rounded-r px-2 py-1">
+                                <ShoppingCart className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">Mes</span>
+                                <span className="text-sm font-bold">S/ {stats.ventas.mes.toFixed(2)}</span>
+                                <span className="ml-auto text-[10px] text-muted-foreground">{stats.cantidadVentas.mes} trans.</span>
+                            </div>
+                            <div className="flex items-center gap-2 border-l-2 border-l-purple-500 bg-card rounded-r px-2 py-1">
+                                <Package className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">Stock</span>
+                                <span className="text-sm font-bold">{stats.productos.sinStock}</span>
+                                <span className="text-[10px] text-muted-foreground">sin · {stats.productos.stockBajo} bajo</span>
+                                <span className="ml-auto text-[10px] text-muted-foreground">{stats.productos.total} total</span>
+                            </div>
+                            <div className="flex items-center gap-2 border-l-2 border-l-orange-500 bg-card rounded-r px-2 py-1">
+                                <Users className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                                <span className="text-xs text-muted-foreground">Clientes</span>
+                                <span className="text-sm font-bold">{stats.clientes.total}</span>
+                                {stats.clientes.nuevosHoy > 0 && <span className="ml-auto text-[10px] text-green-600">+{stats.clientes.nuevosHoy} hoy</span>}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
