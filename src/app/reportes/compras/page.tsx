@@ -34,6 +34,8 @@ import {
     TrendingUp,
     Eye,
     EyeOff,
+    Trash2,
+    Printer,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -104,6 +106,7 @@ export default function ReporteComprasPage() {
     const [dateTo, setDateTo] = useState(() => getLocalDateStr());
     const [methodFilter, setMethodFilter] = useState<string>("all");
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<string | null>(null);
 
     const fetchReport = useCallback(async () => {
         setLoading(true);
@@ -404,6 +407,7 @@ export default function ReporteComprasPage() {
                                             <TableHead className="text-right">Subtotal</TableHead>
                                             <TableHead className="text-right">IGV</TableHead>
                                             <TableHead className="text-right">Total</TableHead>
+                                            <TableHead className="text-center">Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -462,10 +466,70 @@ export default function ReporteComprasPage() {
                                                     <TableCell className="text-right font-bold">
                                                         S/ {purchase.total.toFixed(2)}
                                                     </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <button
+                                                                className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground"
+                                                                title="Imprimir"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const w = window.open('', '_blank', 'width=400,height=600');
+                                                                    if (w) {
+                                                                        w.document.write(`<html><head><title>Compra ${purchase.number}</title><style>body{font-family:monospace;font-size:12px;padding:10px}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:2px 4px;border-bottom:1px solid #ddd}.right{text-align:right}.bold{font-weight:bold}.center{text-align:center}h2{margin:4px 0}hr{border:none;border-top:1px dashed #000;margin:6px 0}</style></head><body>`);
+                                                                        w.document.write(`<h2 class="center">COMPRA ${purchase.number}</h2>`);
+                                                                        w.document.write(`<p>Fecha: ${formatDate(purchase.createdAt)}</p>`);
+                                                                        w.document.write(`<p>Proveedor: ${purchase.supplier.name}</p>`);
+                                                                        w.document.write(`<p>RUC: ${purchase.supplier.ruc}</p>`);
+                                                                        w.document.write(`<p>Método: ${purchase.paymentMethod}</p>`);
+                                                                        if (purchase.invoiceNumber) w.document.write(`<p>Factura: ${purchase.invoiceNumber}</p>`);
+                                                                        w.document.write('<hr>');
+                                                                        w.document.write('<table><tr><th>Producto</th><th class="right">Cant</th><th class="right">P.Unit</th><th class="right">Subt</th></tr>');
+                                                                        (purchase.items || []).forEach((item: PurchaseItem) => {
+                                                                            w.document.write(`<tr><td>${item.productName}</td><td class="right">${item.quantity}</td><td class="right">${item.unitCost.toFixed(2)}</td><td class="right">${item.subtotal.toFixed(2)}</td></tr>`);
+                                                                        });
+                                                                        w.document.write('</table><hr>');
+                                                                        w.document.write(`<p class="right">Subtotal: S/ ${purchase.subtotal.toFixed(2)}</p>`);
+                                                                        w.document.write(`<p class="right">IGV 18%: S/ ${purchase.tax.toFixed(2)}</p>`);
+                                                                        w.document.write(`<p class="right bold">TOTAL: S/ ${purchase.total.toFixed(2)}</p>`);
+                                                                        w.document.write('</body></html>');
+                                                                        w.document.close();
+                                                                        w.print();
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Printer className="h-4 w-4" />
+                                                            </button>
+                                                            <button
+                                                                className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-600"
+                                                                title="Eliminar compra"
+                                                                disabled={deleting === purchase.id}
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    if (!confirm(`¿Eliminar compra ${purchase.number}?\n\nSe revertirá el stock de ${purchase.itemCount} producto(s).`)) return;
+                                                                    setDeleting(purchase.id);
+                                                                    try {
+                                                                        const res = await fetch(`/api/purchases/${purchase.id}`, { method: 'DELETE' });
+                                                                        if (res.ok) {
+                                                                            fetchReport();
+                                                                        } else {
+                                                                            const data = await res.json();
+                                                                            alert(data.error || 'Error al eliminar');
+                                                                        }
+                                                                    } catch {
+                                                                        alert('Error de conexión');
+                                                                    } finally {
+                                                                        setDeleting(null);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {deleting === purchase.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                            </button>
+                                                        </div>
+                                                    </TableCell>
                                                 </TableRow>
                                                 {expandedId === purchase.id && (
                                                     <TableRow key={`${purchase.id}-items`}>
-                                                        <TableCell colSpan={11} className="p-0">
+                                                        <TableCell colSpan={12} className="p-0">
                                                             <div className="bg-muted/30 border-y px-8 py-3">
                                                                 <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
                                                                     <Package className="h-3 w-3" />
@@ -501,7 +565,7 @@ export default function ReporteComprasPage() {
                                         ))}
                                         {/* Fila de totales */}
                                         <TableRow className="bg-muted/50 font-bold">
-                                            <TableCell colSpan={8} className="text-right">
+                                            <TableCell colSpan={9} className="text-right">
                                                 TOTALES
                                             </TableCell>
                                             <TableCell className="text-right">
