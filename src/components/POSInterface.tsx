@@ -745,20 +745,21 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             </div>
 
                             {/* Métodos de pago */}
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium">Método de Pago</p>
-                                <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground">Método de Pago</p>
+                                <div className="grid grid-cols-3 gap-1.5">
                                     {paymentMethods.map(method => {
                                         const Icon = method.icon;
                                         return (
                                             <Button
                                                 key={method.id}
                                                 variant={paymentMethod === method.id ? "default" : "outline"}
-                                                className="flex-col h-auto py-3"
+                                                size="sm"
+                                                className="h-8 text-xs gap-1.5"
                                                 onClick={() => setPaymentMethod(method.id)}
                                             >
-                                                <Icon className="h-5 w-5 mb-1" />
-                                                <span className="text-xs">{method.label}</span>
+                                                <Icon className="h-3.5 w-3.5" />
+                                                {method.label}
                                             </Button>
                                         );
                                     })}
