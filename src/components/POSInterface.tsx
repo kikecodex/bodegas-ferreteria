@@ -21,7 +21,8 @@ import {
     Calculator,
     Printer,
     Building2,
-    CheckCircle
+    CheckCircle,
+    AlertTriangle
 } from "lucide-react";
 import { ClientSelector } from "@/components/ClientSelector";
 import { calculateTaxes } from "@/lib/tax-utils";
@@ -73,6 +74,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
     const [paymentMethod, setPaymentMethod] = useState("EFECTIVO");
     const [amountPaid, setAmountPaid] = useState("");
     const [documentType, setDocumentType] = useState("BOLETA");
+    const [saleNotes, setSaleNotes] = useState("");
 
     // Cliente para Factura
     const [showClientSelector, setShowClientSelector] = useState(false);
@@ -112,6 +114,8 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
     const tax = taxCalc.tax;                         // IGV solo de productos gravados
     const total = taxCalc.total + exemptTotal;       // Total con gravados y exonerados
     const change = Math.max(0, parseFloat(amountPaid || "0") - total);
+    const pendingAmount = Math.max(0, total - parseFloat(amountPaid || "0"));
+    const isPartialPayment = paymentMethod === "EFECTIVO" && pendingAmount > 0.009 && parseFloat(amountPaid || "0") > 0;
 
     // Función auxiliar para agregar producto directamente al carrito
     const addProductToCart = useCallback((product: Product) => {
@@ -327,6 +331,13 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
             return;
         }
 
+        // Validar cliente para pago parcial (necesitamos saber quién debe)
+        if (isPartialPayment && !selectedClient) {
+            alert("Debe seleccionar un cliente para registrar el pago parcial como crédito.");
+            setShowClientSelector(true);
+            return;
+        }
+
         setProcessing(true);
         try {
             const res = await fetch("/api/sales", {
@@ -339,10 +350,13 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                         unitPrice: item.price,
                         discount: item.discount
                     })),
-                    paymentMethod,
+                    paymentMethod: isPartialPayment ? "CREDITO" : paymentMethod,
                     amountPaid: parseFloat(amountPaid) || total,
                     documentType,
-                    clientId: selectedClient?.id || null
+                    clientId: selectedClient?.id || null,
+                    notes: isPartialPayment
+                        ? `PAGO PARCIAL: Pagó S/ ${parseFloat(amountPaid).toFixed(2)} en Efectivo. Pendiente: S/ ${pendingAmount.toFixed(2)}${saleNotes ? `. ${saleNotes}` : ""}`
+                        : saleNotes || null
                 })
             });
 
@@ -365,6 +379,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
             setCart([]);
             setShowPayment(false);
             setAmountPaid("");
+            setSaleNotes("");
             setPaymentMethod("EFECTIVO");
             setSelectedClient(null);
 
@@ -778,14 +793,45 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                             </p>
                                         </div>
                                     )}
+                                    {isPartialPayment && (
+                                        <div className="py-2 px-3 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                                                <p className="text-sm font-semibold text-amber-700">Pago Parcial</p>
+                                            </div>
+                                            <p className="text-xs text-amber-600">
+                                                Pendiente: <span className="font-bold text-base">S/ {pendingAmount.toFixed(2)}</span>
+                                            </p>
+                                            <p className="text-xs text-amber-600/80">
+                                                Se registrará como crédito del cliente
+                                            </p>
+                                            {!selectedClient && (
+                                                <p className="text-xs text-red-500 font-medium">
+                                                    ⚠ Seleccione un cliente para continuar
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
+
+                            {/* Nota para la venta (pago parcial, observaciones) */}
+                            <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground">Nota / Observación (opcional)</p>
+                                <textarea
+                                    value={saleNotes}
+                                    onChange={(e) => setSaleNotes(e.target.value)}
+                                    placeholder="Ej: Falta pagar S/ 0.50, cliente pagará mañana..."
+                                    className="w-full h-14 text-sm p-2 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                    maxLength={200}
+                                />
+                            </div>
 
                             {/* Botón confirmar */}
                             <Button
                                 className="w-full h-10"
                                 onClick={processSale}
-                                disabled={processing || (paymentMethod === "EFECTIVO" && parseFloat(amountPaid || "0") < total)}
+                                disabled={processing || (paymentMethod === "EFECTIVO" && parseFloat(amountPaid || "0") <= 0) || (isPartialPayment && !selectedClient)}
                             >
                                 {processing ? (
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
