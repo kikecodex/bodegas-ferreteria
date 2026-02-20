@@ -404,6 +404,7 @@ export default function CreditosPage() {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead>Nº Venta</TableHead>
+                                                    <TableHead>Cliente</TableHead>
                                                     <TableHead>Fecha</TableHead>
                                                     <TableHead>Documento</TableHead>
                                                     <TableHead className="text-right">Total</TableHead>
@@ -421,6 +422,9 @@ export default function CreditosPage() {
                                                         <TableRow key={credito.id}>
                                                             <TableCell className="font-medium">
                                                                 {credito.number}
+                                                            </TableCell>
+                                                            <TableCell className="text-sm">
+                                                                {credito.client?.name || "Sin cliente"}
                                                             </TableCell>
                                                             <TableCell>
                                                                 {new Date(credito.createdAt).toLocaleDateString('es-PE')}
