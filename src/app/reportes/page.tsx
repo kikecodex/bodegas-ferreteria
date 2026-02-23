@@ -33,11 +33,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface DashboardStats {
     ventas: {
-        hoy: number;
-        ayer: number;
-        semana: number;
-        mes: number;
-        fechaSeleccionada?: number;
+        hoy: { total: number; caja: number; credito: number };
+        ayer: { caja: number };
+        semana: { caja: number };
+        mes: { caja: number };
+        fechaSeleccionada?: { total: number; caja: number; credito: number };
     };
     cantidadVentas: {
         hoy: number;
@@ -124,51 +124,61 @@ export default function ReportesPage() {
             // Obtener la fecha Perú de cada venta para comparar
             const getSaleDateStr = (createdAt: string) => getPeruDateStr(new Date(createdAt));
 
-            // Filtrar ventas por período (excluir ventas a crédito - esas se manejan aparte)
-            const ventasHoy = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
-                return getSaleDateStr(s.createdAt) === todayStr &&
-                    s.status === "COMPLETADA" &&
-                    s.paymentMethod !== "CREDITO";
+            // Filtrar ventas por período (separando ventas al crédito de las de caja)
+            const ventasHoyCaja = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
+                return getSaleDateStr(s.createdAt) === todayStr && s.status === "COMPLETADA" && s.paymentMethod !== "CREDITO";
+            });
+            const ventasHoyCredito = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
+                return getSaleDateStr(s.createdAt) === todayStr && s.status === "COMPLETADA" && s.paymentMethod === "CREDITO";
             });
             const ventasAyer = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
-                return getSaleDateStr(s.createdAt) === yesterdayStr &&
-                    s.status === "COMPLETADA" &&
-                    s.paymentMethod !== "CREDITO";
+                return getSaleDateStr(s.createdAt) === yesterdayStr && s.status === "COMPLETADA" && s.paymentMethod !== "CREDITO";
             });
             const ventasSemana = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) =>
-                new Date(s.createdAt) >= weekAgo &&
-                getSaleDateStr(s.createdAt) <= todayStr &&
-                s.status === "COMPLETADA" &&
-                s.paymentMethod !== "CREDITO"
+                new Date(s.createdAt) >= weekAgo && getSaleDateStr(s.createdAt) <= todayStr && s.status === "COMPLETADA" && s.paymentMethod !== "CREDITO"
             );
             const ventasMes = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) =>
-                new Date(s.createdAt) >= monthAgo &&
-                getSaleDateStr(s.createdAt) <= todayStr &&
-                s.status === "COMPLETADA" &&
-                s.paymentMethod !== "CREDITO"
+                new Date(s.createdAt) >= monthAgo && getSaleDateStr(s.createdAt) <= todayStr && s.status === "COMPLETADA" && s.paymentMethod !== "CREDITO"
             );
 
             // Calcular totales
-            const totalHoy = ventasHoy.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
+            const totalHoyCaja = ventasHoyCaja.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
+            const totalHoyCredito = ventasHoyCredito.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
+            const totalHoy = totalHoyCaja + totalHoyCredito;
+
             const totalAyer = ventasAyer.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
             const totalSemana = ventasSemana.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
             const totalMes = ventasMes.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
 
-            // Ventas por método de pago (del día)
+            // Si hay fecha específica seleccionada, calcular ventas de ese día
+            let ventasFechaSeleccionadaCaja: typeof ventasHoyCaja = [];
+            let ventasFechaSeleccionadaCredito: typeof ventasHoyCaja = [];
+            let totalFechaSeleccionadaCaja = 0;
+            let totalFechaSeleccionadaCredito = 0;
+            let totalFechaSeleccionada = 0;
+
+            if (selectedDate) {
+                ventasFechaSeleccionadaCaja = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
+                    return getSaleDateStr(s.createdAt) === selectedDate && s.status === "COMPLETADA" && s.paymentMethod !== "CREDITO";
+                });
+                ventasFechaSeleccionadaCredito = sales.filter((s: { createdAt: string; status: string; paymentMethod: string }) => {
+                    return getSaleDateStr(s.createdAt) === selectedDate && s.status === "COMPLETADA" && s.paymentMethod === "CREDITO";
+                });
+                totalFechaSeleccionadaCaja = ventasFechaSeleccionadaCaja.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
+                totalFechaSeleccionadaCredito = ventasFechaSeleccionadaCredito.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
+                totalFechaSeleccionada = totalFechaSeleccionadaCaja + totalFechaSeleccionadaCredito;
+            }
+
+
+
+            // Ventas por método de pago (del día actual o seleccionado) - Sólo cuenta caja
+            const targetDateStr = selectedDate || todayStr;
             const ventasPorMetodo: Record<string, number> = {};
-            ventasHoy.forEach((v: { paymentMethod: string; total: number }) => {
+            const ventasTarget = selectedDate ? ventasFechaSeleccionadaCaja : ventasHoyCaja;
+            ventasTarget.forEach((v: { paymentMethod: string; total: number }) => {
                 ventasPorMetodo[v.paymentMethod] = (ventasPorMetodo[v.paymentMethod] || 0) + v.total;
             });
 
-            // Si hay fecha específica seleccionada, calcular ventas de ese día
-            let ventasFechaSeleccionada: typeof ventasHoy = [];
-            let totalFechaSeleccionada = 0;
-            if (selectedDate) {
-                ventasFechaSeleccionada = sales.filter((s: { createdAt: string; status: string }) => {
-                    return getSaleDateStr(s.createdAt) === selectedDate && s.status === "COMPLETADA";
-                });
-                totalFechaSeleccionada = ventasFechaSeleccionada.reduce((sum: number, v: { total: number }) => sum + v.total, 0);
-            }
 
             // Top productos (simulado - necesitaría agregación en backend)
             const productSales: Record<string, { name: string; code: string; total: number; qty: number }> = {};
@@ -192,7 +202,7 @@ export default function ReportesPage() {
 
             const egresosPorMetodo: Record<string, number> = {};
             purchases.forEach((p: { createdAt: string; paymentMethod?: string; total: number; status: string }) => {
-                if (getSaleDateStr(p.createdAt) === todayStr && p.status === "COMPLETADA") {
+                if (getSaleDateStr(p.createdAt) === targetDateStr && p.status === "COMPLETADA") {
                     const method = p.paymentMethod || "EFECTIVO";
                     egresosPorMetodo[method] = (egresosPorMetodo[method] || 0) + p.total;
                 }
@@ -200,17 +210,17 @@ export default function ReportesPage() {
 
             setStats({
                 ventas: {
-                    hoy: totalHoy,
-                    ayer: totalAyer,
-                    semana: totalSemana,
-                    mes: totalMes,
-                    fechaSeleccionada: selectedDate ? totalFechaSeleccionada : undefined
+                    hoy: { total: totalHoy, caja: totalHoyCaja, credito: totalHoyCredito },
+                    ayer: { caja: totalAyer },
+                    semana: { caja: totalSemana },
+                    mes: { caja: totalMes },
+                    fechaSeleccionada: selectedDate ? { total: totalFechaSeleccionada, caja: totalFechaSeleccionadaCaja, credito: totalFechaSeleccionadaCredito } : undefined
                 },
                 cantidadVentas: {
-                    hoy: ventasHoy.length,
+                    hoy: ventasHoyCaja.length + ventasHoyCredito.length,
                     semana: ventasSemana.length,
                     mes: ventasMes.length,
-                    fechaSeleccionada: selectedDate ? ventasFechaSeleccionada.length : undefined
+                    fechaSeleccionada: selectedDate ? ventasFechaSeleccionadaCaja.length + ventasFechaSeleccionadaCredito.length : undefined
                 },
                 productos: {
                     total: products.length,
@@ -241,7 +251,7 @@ export default function ReportesPage() {
         return ((current - previous) / previous) * 100;
     };
 
-    const variation = stats ? getVariation(stats.ventas.hoy, stats.ventas.ayer) : 0;
+    const variation = stats ? getVariation(stats.ventas.hoy.caja, stats.ventas.ayer.caja) : 0;
 
     return (
         <div className="flex min-h-screen bg-background">
@@ -418,41 +428,70 @@ export default function ReportesPage() {
                             </a>
                         </div>
 
-                        {/* Card de Fecha Seleccionada */}
-                        {selectedDate && stats.ventas.fechaSeleccionada !== undefined && (
-                            <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Calendar className="h-5 w-5" />
-                                                <p className="text-white/80 text-sm font-medium">
-                                                    Ventas del {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                                </p>
-                                            </div>
-                                            <p className="text-3xl font-bold">S/ {stats.ventas.fechaSeleccionada.toFixed(2)}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-2xl font-bold">{stats.cantidadVentas.fechaSeleccionada}</p>
-                                            <p className="text-white/80 text-sm">transacciones</p>
-                                        </div>
+                        {/* Card del Día */}
+                        <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg border-none relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                            <CardContent className="p-6 relative z-10">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Calendar className="h-5 w-5 text-white/80" />
+                                    <p className="text-white/90 font-medium">
+                                        Resumen del {selectedDate
+                                            ? new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                                            : new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                                        }
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                                    {/* Total Ventas (Incluye crédito) */}
+                                    <div className="bg-black/20 rounded-xl p-4">
+                                        <p className="text-white/80 text-sm mb-1">Ventas Totales Brutas</p>
+                                        <p className="text-4xl font-bold">
+                                            S/ {(selectedDate ? stats.ventas.fechaSeleccionada?.total || 0 : stats.ventas.hoy.total).toFixed(2)}
+                                        </p>
+                                        <p className="text-white/60 text-xs mt-1">Incluye ventas al crédito</p>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        )}
+
+                                    {/* Dinero en Caja (Flujo Real) */}
+                                    <div className="bg-black/20 rounded-xl p-4 relative overflow-hidden ring-1 ring-white/30">
+                                        <div className="absolute inset-0 bg-green-500/10"></div>
+                                        <p className="text-green-300 text-sm mb-1 font-medium flex items-center gap-1.5"><Wallet className="w-4 h-4" /> Flujo de Caja (Dinero Real)</p>
+                                        <p className="text-4xl font-bold text-white relative z-10">
+                                            S/ {(selectedDate ? stats.ventas.fechaSeleccionada?.caja || 0 : stats.ventas.hoy.caja).toFixed(2)}
+                                        </p>
+                                        <p className="text-green-200/60 text-xs mt-1 relative z-10">Dinero que debe haber en caja</p>
+                                    </div>
+
+                                    {/* Ventas al Crédito (Pendiente) */}
+                                    <div className="bg-black/20 rounded-xl p-4">
+                                        <p className="text-orange-200 text-sm mb-1 flex items-center gap-1.5"><CreditCard className="w-4 h-4" /> Ventas al Crédito</p>
+                                        <p className="text-3xl font-bold text-white">
+                                            S/ {(selectedDate ? stats.ventas.fechaSeleccionada?.credito || 0 : stats.ventas.hoy.credito).toFixed(2)}
+                                        </p>
+                                        <p className="text-orange-200/60 text-xs mt-1">Dinero pendiente de cobro</p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-white/20 text-right">
+                                    <p className="text-white/90">
+                                        <span className="font-bold text-lg">{selectedDate ? stats.cantidadVentas.fechaSeleccionada || 0 : stats.cantidadVentas.hoy}</span> transacciones en total
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
 
                         {/* KPIs - Ultra compacto */}
                         <div className="grid grid-cols-4 gap-2">
                             <div className="flex items-center gap-2 border-l-2 border-l-green-500 bg-card rounded-r px-2 py-1">
                                 <DollarSign className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                <span className="text-xs text-muted-foreground">Hoy</span>
-                                <span className="text-sm font-bold">S/ {stats.ventas.hoy.toFixed(2)}</span>
-                                <span className="ml-auto text-[10px] text-muted-foreground">{variation >= 0 ? "↑" : "↓"}{Math.abs(variation).toFixed(1)}%</span>
+                                <span className="text-xs text-muted-foreground">{selectedDate ? 'Fecha' : 'Hoy'}</span>
+                                <span className="text-sm font-bold">S/ {(selectedDate ? stats.ventas.fechaSeleccionada?.caja || 0 : stats.ventas.hoy.caja).toFixed(2)}</span>
+                                <span className="ml-auto text-[10px] text-muted-foreground">{!selectedDate && (variation >= 0 ? "↑" : "↓")}{!selectedDate && Math.abs(variation).toFixed(1)}%</span>
                             </div>
                             <div className="flex items-center gap-2 border-l-2 border-l-blue-500 bg-card rounded-r px-2 py-1">
                                 <ShoppingCart className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                                <span className="text-xs text-muted-foreground">Mes</span>
-                                <span className="text-sm font-bold">S/ {stats.ventas.mes.toFixed(2)}</span>
+                                <span className="text-xs text-muted-foreground">Mes (Caja)</span>
+                                <span className="text-sm font-bold">S/ {stats.ventas.mes.caja.toFixed(2)}</span>
                                 <span className="ml-auto text-[10px] text-muted-foreground">{stats.cantidadVentas.mes} trans.</span>
                             </div>
                             <div className="flex items-center gap-2 border-l-2 border-l-purple-500 bg-card rounded-r px-2 py-1">
@@ -594,24 +633,24 @@ export default function ReportesPage() {
                             <CardContent>
                                 <div className="grid grid-cols-3 gap-4 text-center">
                                     <div className="p-3 bg-muted rounded-lg">
-                                        <p className="text-xs text-muted-foreground">Hoy</p>
-                                        <p className="text-xl font-bold">S/ {stats.ventas.hoy.toFixed(2)}</p>
+                                        <p className="text-xs text-muted-foreground">{selectedDate ? 'Fecha' : 'Hoy'}</p>
+                                        <p className="text-xl font-bold text-green-600">S/ {(selectedDate ? stats.ventas.fechaSeleccionada?.caja || 0 : stats.ventas.hoy.caja).toFixed(2)}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {stats.cantidadVentas.hoy} ventas
+                                            Caja Registradora
                                         </p>
                                     </div>
-                                    <div className="p-3 bg-muted rounded-lg">
-                                        <p className="text-xs text-muted-foreground">Esta Semana</p>
-                                        <p className="text-xl font-bold">S/ {stats.ventas.semana.toFixed(2)}</p>
+                                    <div className="p-3 bg-muted rounded-lg border border-border">
+                                        <p className="text-xs text-muted-foreground">Esta Semana (Caja)</p>
+                                        <p className="text-xl font-bold">S/ {stats.ventas.semana.caja.toFixed(2)}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {stats.cantidadVentas.semana} ventas
+                                            {stats.cantidadVentas.semana} transacciones
                                         </p>
                                     </div>
-                                    <div className="p-3 bg-muted rounded-lg">
-                                        <p className="text-xs text-muted-foreground">Este Mes</p>
-                                        <p className="text-xl font-bold">S/ {stats.ventas.mes.toFixed(2)}</p>
+                                    <div className="p-3 bg-muted rounded-lg border border-border">
+                                        <p className="text-xs text-muted-foreground">Este Mes (Caja)</p>
+                                        <p className="text-xl font-bold">S/ {stats.ventas.mes.caja.toFixed(2)}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {stats.cantidadVentas.mes} ventas
+                                            {stats.cantidadVentas.mes} transacciones
                                         </p>
                                     </div>
                                 </div>
