@@ -58,6 +58,7 @@ interface POSInterfaceProps {
 const paymentMethods = [
     { id: "EFECTIVO", label: "Efectivo", icon: Banknote, color: "bg-green-500" },
     { id: "YAPE", label: "Yape", icon: Smartphone, color: "bg-purple-500" },
+    { id: "FISE", label: "FISE", icon: Smartphone, color: "bg-teal-500" },
     { id: "CREDITO", label: "Crédito", icon: CreditCard, color: "bg-amber-500" }
 ];
 
@@ -747,7 +748,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             {/* Métodos de pago */}
                             <div className="space-y-1">
                                 <p className="text-xs text-muted-foreground">Método de Pago</p>
-                                <div className="grid grid-cols-3 gap-1.5">
+                                <div className="grid grid-cols-2 gap-1.5">
                                     {paymentMethods.map(method => {
                                         const Icon = method.icon;
                                         return (

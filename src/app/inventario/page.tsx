@@ -222,7 +222,7 @@ export default function InventarioPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="app" rel="noopener noreferrer"
+                                href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -238,8 +238,6 @@ export default function InventarioPage() {
                 <div className="p-3 border-t">
                     <a
                         href="/configuracion"
-                        target="app"
-                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />

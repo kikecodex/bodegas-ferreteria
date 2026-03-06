@@ -152,7 +152,7 @@ export default function PerfilPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="app" rel="noopener noreferrer"
+                                href={item.href}
                                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent transition-colors"
                             >
                                 <Icon className="h-5 w-5" />
@@ -162,7 +162,7 @@ export default function PerfilPage() {
                     })}
                 </nav>
                 <div className="p-3 border-t">
-                    <a href="/perfil" target="app" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-red-600 text-white">
+                    <a href="/perfil" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-red-600 text-white">
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Mi Perfil</span>
                     </a>

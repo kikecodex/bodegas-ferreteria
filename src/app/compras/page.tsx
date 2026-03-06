@@ -249,7 +249,7 @@ export default function ComprasPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="app" rel="noopener noreferrer"
+                                href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active ? "bg-red-600 text-white" : "text-muted-foreground hover:bg-accent"
                                     }`}
                             >
@@ -260,7 +260,7 @@ export default function ComprasPage() {
                     })}
                 </nav>
                 <div className="p-3 border-t">
-                    <a href="/configuracion" target="app" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
+                    <a href="/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
                     </a>
@@ -458,10 +458,11 @@ export default function ComprasPage() {
                         <Card>
                             <CardContent className="p-4">
                                 <label className="text-sm font-medium mb-2 block">Método de Pago (Egreso)</label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
                                     {[
                                         { value: "EFECTIVO", label: "Efectivo", icon: Banknote, color: "green" },
                                         { value: "YAPE", label: "Yape", icon: Smartphone, color: "purple" },
+                                        { value: "FISE", label: "FISE", icon: Smartphone, color: "teal" },
                                         { value: "TRANSFERENCIA", label: "Transferencia", icon: CreditCard, color: "blue" },
                                     ].map((method) => {
                                         const Icon = method.icon;
@@ -472,8 +473,8 @@ export default function ComprasPage() {
                                                 type="button"
                                                 onClick={() => setPaymentMethod(method.value)}
                                                 className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${isSelected
-                                                        ? `border-${method.color}-500 bg-${method.color}-500/10 text-${method.color}-600`
-                                                        : "border-muted hover:border-muted-foreground/30"
+                                                    ? `border-${method.color}-500 bg-${method.color}-500/10 text-${method.color}-600`
+                                                    : "border-muted hover:border-muted-foreground/30"
                                                     }`}
                                             >
                                                 <Icon className={`h-5 w-5 ${isSelected ? `text-${method.color}-500` : "text-muted-foreground"}`} />

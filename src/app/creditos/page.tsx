@@ -622,6 +622,7 @@ export default function CreditosPage() {
                                                 >
                                                     <option value="EFECTIVO">💵 Efectivo</option>
                                                     <option value="YAPE">📱 Yape</option>
+                                                    <option value="FISE">🏦 FISE</option>
                                                     <option value="TRANSFERENCIA">💳 Transferencia</option>
                                                 </select>
                                             </div>

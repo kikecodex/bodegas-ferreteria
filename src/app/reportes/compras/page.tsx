@@ -204,7 +204,7 @@ export default function ReporteComprasPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="app" rel="noopener noreferrer"
+                                href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -220,8 +220,6 @@ export default function ReporteComprasPage() {
                 <div className="p-3 border-t">
                     <a
                         href="/configuracion"
-                        target="app"
-                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />
@@ -247,7 +245,7 @@ export default function ReporteComprasPage() {
             <main className="flex-1 flex flex-col">
                 <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <a href="/reportes" target="app" rel="noopener noreferrer">
+                        <a href="/reportes">
                             <Button variant="ghost" size="icon">
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
@@ -327,6 +325,14 @@ export default function ReporteComprasPage() {
                                     >
                                         <Wallet className="h-3 w-3 mr-1" />
                                         Yape
+                                    </Button>
+                                    <Button
+                                        variant={methodFilter === "FISE" ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setMethodFilter("FISE")}
+                                    >
+                                        <Wallet className="h-3 w-3 mr-1" />
+                                        FISE
                                     </Button>
                                     <Button
                                         variant={methodFilter === "TRANSFERENCIA" ? "default" : "outline"}
@@ -448,7 +454,9 @@ export default function ReporteComprasPage() {
                                                                 ? "border-amber-500 text-amber-600"
                                                                 : purchase.paymentMethod === "YAPE"
                                                                     ? "border-purple-500 text-purple-600"
-                                                                    : "border-blue-500 text-blue-600"
+                                                                    : purchase.paymentMethod === "FISE"
+                                                                        ? "border-teal-500 text-teal-600"
+                                                                        : "border-blue-500 text-blue-600"
                                                                 }`}
                                                         >
                                                             {purchase.paymentMethod}

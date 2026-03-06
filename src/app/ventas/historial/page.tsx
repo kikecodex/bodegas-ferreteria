@@ -437,6 +437,7 @@ export default function HistorialVentasPage() {
             EFECTIVO: "bg-green-500/20 text-green-700",
             TARJETA: "bg-blue-500/20 text-blue-700",
             YAPE: "bg-purple-500/20 text-purple-700",
+            FISE: "bg-teal-500/20 text-teal-700",
             PLIN: "bg-cyan-500/20 text-cyan-700",
             TRANSFERENCIA: "bg-orange-500/20 text-orange-700",
             CREDITO: "bg-amber-500/20 text-amber-700"
@@ -470,7 +471,7 @@ export default function HistorialVentasPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="app" rel="noopener noreferrer"
+                                href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -486,8 +487,6 @@ export default function HistorialVentasPage() {
                 <div className="p-3 border-t">
                     <a
                         href="/configuracion"
-                        target="app"
-                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />

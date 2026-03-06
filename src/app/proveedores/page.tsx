@@ -127,7 +127,7 @@ export default function ProveedoresPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="app" rel="noopener noreferrer"
+                                href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active ? "bg-red-600 text-white" : "text-muted-foreground hover:bg-accent"
                                     }`}
                             >
@@ -138,7 +138,7 @@ export default function ProveedoresPage() {
                     })}
                 </nav>
                 <div className="p-3 border-t">
-                    <a href="/configuracion" target="app" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
+                    <a href="/configuracion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent">
                         <Settings className="h-5 w-5" />
                         <span className="font-medium">Configuración</span>
                     </a>

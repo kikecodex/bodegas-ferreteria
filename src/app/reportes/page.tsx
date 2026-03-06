@@ -275,7 +275,7 @@ export default function ReportesPage() {
                         return (
                             <a
                                 key={item.label}
-                                href={item.href} target="app" rel="noopener noreferrer"
+                                href={item.href}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${item.active
                                     ? "bg-red-600 text-white"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -291,8 +291,6 @@ export default function ReportesPage() {
                 <div className="p-3 border-t">
                     <a
                         href="/configuracion"
-                        target="app"
-                        rel="noopener noreferrer"
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
                         <Settings className="h-5 w-5" />
@@ -378,7 +376,7 @@ export default function ReportesPage() {
                     <div className="p-6 space-y-4">
                         {/* Reportes Detallados - ARRIBA */}
                         <div className="grid grid-cols-3 gap-4">
-                            <a href="/reportes/facturas" target="app" rel="noopener noreferrer">
+                            <a href="/reportes/facturas">
                                 <Card className="hover:border-green-500 hover:shadow-md transition-all cursor-pointer group">
                                     <CardContent className="p-4 flex items-center gap-4">
                                         <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
@@ -394,7 +392,7 @@ export default function ReportesPage() {
                                     </CardContent>
                                 </Card>
                             </a>
-                            <a href="/reportes/caja-diaria" target="app" rel="noopener noreferrer">
+                            <a href="/reportes/caja-diaria">
                                 <Card className="hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group">
                                     <CardContent className="p-4 flex items-center gap-4">
                                         <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
@@ -410,7 +408,7 @@ export default function ReportesPage() {
                                     </CardContent>
                                 </Card>
                             </a>
-                            <a href="/reportes/compras" target="app" rel="noopener noreferrer">
+                            <a href="/reportes/compras">
                                 <Card className="hover:border-red-500 hover:shadow-md transition-all cursor-pointer group">
                                     <CardContent className="p-4 flex items-center gap-4">
                                         <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center">
