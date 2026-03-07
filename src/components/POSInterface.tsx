@@ -667,8 +667,8 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
             {/* Modal de Pago */}
             {showPayment && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <Card className="w-[420px]">
-                        <CardHeader className="py-2 px-4">
+                    <Card className="w-[420px] max-h-[95vh] overflow-y-auto">
+                        <CardHeader className="py-1.5 px-4">
                             <CardTitle className="flex items-center justify-between text-base">
                                 <span>Procesar Pago</span>
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPayment(false)}>
@@ -676,17 +676,18 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                 </Button>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-3 px-4 pb-4">
+                        <CardContent className="space-y-2 px-4 pb-3">
                             {/* Total */}
-                            <div className="text-center py-2 bg-primary/10 rounded-lg">
+                            <div className="text-center py-1 bg-primary/10 rounded-lg">
                                 <p className="text-xs text-muted-foreground">Total a Pagar</p>
-                                <p className="text-3xl font-bold">S/ {total.toFixed(2)}</p>
+                                <p className="text-2xl font-bold">S/ {total.toFixed(2)}</p>
                             </div>
 
                             {/* Tipo de comprobante */}
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-3 gap-1.5">
                                 <Button
                                     variant={documentType === "BOLETA" ? "default" : "outline"}
+                                    size="sm"
                                     onClick={() => {
                                         setDocumentType("BOLETA");
                                         setSelectedClient(null);
@@ -696,12 +697,14 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                 </Button>
                                 <Button
                                     variant={documentType === "FACTURA" ? "default" : "outline"}
+                                    size="sm"
                                     onClick={() => setDocumentType("FACTURA")}
                                 >
                                     Factura
                                 </Button>
                                 <Button
                                     variant={documentType === "NOTA_VENTA" ? "default" : "outline"}
+                                    size="sm"
                                     onClick={() => {
                                         setDocumentType("NOTA_VENTA");
                                         setSelectedClient(null);
@@ -712,22 +715,23 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             </div>
 
                             {/* Cliente (obligatorio para Factura, opcional para resto) */}
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium flex items-center gap-2">
-                                    <Building2 className="h-4 w-4" />
+                            <div className="space-y-1">
+                                <p className="text-xs font-medium flex items-center gap-1.5">
+                                    <Building2 className="h-3.5 w-3.5" />
                                     Cliente {documentType === "FACTURA" && <span className="text-red-500">*</span>}
                                 </p>
                                 {selectedClient ? (
-                                    <div className="p-3 bg-muted rounded-lg flex items-center justify-between">
+                                    <div className="p-2 bg-muted rounded-lg flex items-center justify-between">
                                         <div>
-                                            <p className="font-medium">{selectedClient.name}</p>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="font-medium text-sm">{selectedClient.name}</p>
+                                            <p className="text-xs text-muted-foreground">
                                                 {selectedClient.documentType}: {selectedClient.document}
                                             </p>
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="sm"
+                                            className="h-7"
                                             onClick={() => setShowClientSelector(true)}
                                         >
                                             Cambiar
@@ -736,10 +740,10 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                 ) : (
                                     <Button
                                         variant="outline"
-                                        className="w-full"
+                                        className="w-full h-8 text-sm"
                                         onClick={() => setShowClientSelector(true)}
                                     >
-                                        <Building2 className="h-4 w-4 mr-2" />
+                                        <Building2 className="h-3.5 w-3.5 mr-2" />
                                         Seleccionar Cliente
                                     </Button>
                                 )}
@@ -769,8 +773,8 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
 
                             {/* Monto recibido (solo efectivo) */}
                             {paymentMethod === "EFECTIVO" && (
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium">Monto Recibido</p>
+                                <div className="space-y-1.5">
+                                    <p className="text-xs font-medium">Monto Recibido</p>
                                     <Input
                                         type="number"
                                         step="0.10"
@@ -778,7 +782,7 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                         value={amountPaid}
                                         onChange={(e) => setAmountPaid(e.target.value)}
                                         placeholder={total.toFixed(2)}
-                                        className="text-2xl h-14 text-center"
+                                        className="text-lg h-10 text-center font-bold"
                                         autoFocus
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter" && !processing && parseFloat(amountPaid || "0") >= total) {
@@ -788,21 +792,21 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                                         }}
                                     />
                                     {parseFloat(amountPaid) >= total && (
-                                        <div className="text-center py-2 bg-green-500/10 rounded-lg">
+                                        <div className="text-center py-1 bg-green-500/10 rounded-lg">
                                             <p className="text-xs text-muted-foreground">Vuelto</p>
-                                            <p className="text-xl font-bold text-green-600">
+                                            <p className="text-lg font-bold text-green-600">
                                                 S/ {change.toFixed(2)}
                                             </p>
                                         </div>
                                     )}
                                     {isPartialPayment && (
-                                        <div className="py-2 px-3 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                                                <p className="text-sm font-semibold text-amber-700">Pago Parcial</p>
+                                        <div className="py-1.5 px-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg space-y-0.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+                                                <p className="text-xs font-semibold text-amber-700">Pago Parcial</p>
                                             </div>
                                             <p className="text-xs text-amber-600">
-                                                Pendiente: <span className="font-bold text-base">S/ {pendingAmount.toFixed(2)}</span>
+                                                Pendiente: <span className="font-bold text-sm">S/ {pendingAmount.toFixed(2)}</span>
                                             </p>
                                             <p className="text-xs text-amber-600/80">
                                                 Se registrará como crédito del cliente
@@ -818,20 +822,20 @@ export function POSInterface({ onSaleComplete }: POSInterfaceProps) {
                             )}
 
                             {/* Nota para la venta (pago parcial, observaciones) */}
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 <p className="text-xs text-muted-foreground">Nota / Observación (opcional)</p>
                                 <textarea
                                     value={saleNotes}
                                     onChange={(e) => setSaleNotes(e.target.value)}
                                     placeholder="Ej: Falta pagar S/ 0.50, cliente pagará mañana..."
-                                    className="w-full h-14 text-sm p-2 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full h-10 text-xs p-1.5 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                                     maxLength={200}
                                 />
                             </div>
 
                             {/* Botón confirmar */}
                             <Button
-                                className="w-full h-10"
+                                className="w-full h-9 text-sm"
                                 onClick={processSale}
                                 disabled={processing || (paymentMethod === "EFECTIVO" && parseFloat(amountPaid || "0") <= 0) || (isPartialPayment && !selectedClient)}
                             >
