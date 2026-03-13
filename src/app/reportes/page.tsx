@@ -27,7 +27,8 @@ import {
     CreditCard,
     Wallet,
     ArrowRight,
-    Truck
+    Truck,
+    Vault
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -65,6 +66,13 @@ interface DashboardStats {
     egresosPorMetodo: Record<string, number>;
 }
 
+interface CajaInfo {
+    isOpen: boolean;
+    openingAmount: number;
+    expectedAmount: number;
+    totalPurchasesCash: number;
+}
+
 const navItems = [
     { icon: Home, label: "Dashboard", href: "/" },
     { icon: Package, label: "Productos", href: "/productos" },
@@ -81,10 +89,29 @@ export default function ReportesPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [period, setPeriod] = useState<"hoy" | "semana" | "mes">("hoy");
     const [selectedDate, setSelectedDate] = useState<string>("");  // Fecha específica YYYY-MM-DD
+    const [cajaInfo, setCajaInfo] = useState<CajaInfo | null>(null);
 
     const fetchStats = async () => {
         setLoading(true);
         try {
+            // Obtener estado de caja
+            try {
+                const cajaRes = await fetch("/api/cash-register");
+                if (cajaRes.ok) {
+                    const cajaData = await cajaRes.json();
+                    if (cajaData.isOpen && cajaData.summary) {
+                        setCajaInfo({
+                            isOpen: true,
+                            openingAmount: cajaData.summary.openingAmount || 0,
+                            expectedAmount: cajaData.summary.expectedAmount || 0,
+                            totalPurchasesCash: cajaData.summary.totalPurchasesCash || 0
+                        });
+                    } else {
+                        setCajaInfo({ isOpen: false, openingAmount: 0, expectedAmount: 0, totalPurchasesCash: 0 });
+                    }
+                }
+            } catch { /* silently handle */ }
+
             // Obtener productos
             const productsRes = await fetch("/api/products?limit=1000");
             const productsData = productsRes.ok ? await productsRes.json() : { products: [] };
@@ -559,6 +586,18 @@ export default function ReportesPage() {
                                                         </div>
                                                     );
                                                 })}
+                                                {/* Apertura de Caja */}
+                                                {cajaInfo && cajaInfo.isOpen && (
+                                                    <div className="border-t pt-3 mt-3">
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-blue-600 font-medium flex items-center gap-1.5">
+                                                                <Vault className="w-3.5 h-3.5" />
+                                                                Apertura de Caja
+                                                            </span>
+                                                            <span className="text-blue-600 font-bold">S/ {cajaInfo.openingAmount.toFixed(2)}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {/* Totales */}
                                                 <div className="border-t pt-3 mt-3">
                                                     <div className="flex justify-between text-sm">
@@ -575,6 +614,14 @@ export default function ReportesPage() {
                                                             S/ {(totalIngresos - totalEgresos).toFixed(2)}
                                                         </span>
                                                     </div>
+                                                    {cajaInfo && cajaInfo.isOpen && (
+                                                        <div className="flex justify-between text-sm font-bold bg-blue-50 dark:bg-blue-950/30 rounded-lg px-2 py-1.5 mt-2">
+                                                            <span className="text-blue-700 dark:text-blue-400">Efectivo Esperado en Caja</span>
+                                                            <span className="text-blue-700 dark:text-blue-400">
+                                                                S/ {cajaInfo.expectedAmount.toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
